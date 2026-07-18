@@ -33,6 +33,10 @@ dev = [
     "pyright"
 ]
 
+[project.scripts]
+master = "dros_host.master:main"
+sender = "dros_host.sender:main"
+
 [build-system]
 requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"

@@ -19,7 +19,7 @@ class KeyboardEchoNode(SourceNode):
                 return payload
         except (SyntaxError, ValueError):
             pass
-        return {"command": command}
+        return {"message": command}
 
     def _parse_topic_and_command(self, command: str) -> tuple[str, str]:
         match = re.match(r"^\s*topic\s*=(\S+)(?:\s+(.*))?$", command)
@@ -33,7 +33,7 @@ class KeyboardEchoNode(SourceNode):
         """
         Wait for keyboard input and echo it back as a message
         Can prefix with "topic=<topic>" to specify a topic, otherwise defaults to "/events"
-        Can send a dictionary as a string to specify a payload, otherwise defaults to {"command": "<input>"}
+        Can send a dictionary as a string to specify a payload, otherwise defaults to {"message": "<input>"}
         """
         command = input("Enter command: ")
         topic, payload_command = self._parse_topic_and_command(command)

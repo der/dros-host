@@ -1,9 +1,11 @@
 import readline
 
-from audio_base.asr_node import ASRNode
-from dros import Bus, Node, ServerTransport
-from messages.events import EventMessage
+from dros_host.audio_base.asr_node import ASRNode
+from dros import Bus, DrosLogger, Node, ServerTransport
+from dros_host.llm_support.llm_node import LLMNode
+from dros_host.messages.events import EventMessage
 
+logger = DrosLogger("events")
 
 class EventLogNode(Node):
     def __init__(self, bus):
@@ -13,14 +15,15 @@ class EventLogNode(Node):
     def process(self, message):
         try:
             event = EventMessage.model_validate(message)
-            print(f"Event {event.type}: {event.message}")
+            logger.info(f"Event {event.type}: {event.message}")
         except Exception:
-            print("Event channel received:", message)
+            logger.info(f"Event channel received: {message}")
 
 def main():
     bus = Bus(transport=ServerTransport(port=5000))  
     EventLogNode(bus)
     ASRNode(bus, topic="/audio_stream", output_topic="/text_stream")
+    LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", model_name="gemma4:26b")
     bus.run()
 
 if __name__ == "__main__":
