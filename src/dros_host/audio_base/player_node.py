@@ -1,33 +1,29 @@
 """Audio player node for Marvin speech project.
 
-Ported from ROS2 to socket.io. Subscribes to audio room and plays through
+Ported to DROS. Subscribes to audio room and plays through
 default speaker using PyAudio.
 """
 
-import argparse
-import asyncio
-import logging
 import os
-from queue import Empty, Queue
 
 import numpy as np
 import pyaudio
+from queue import Empty, Queue
 
-from messages.base import BaseNode
+from dros import Bus, Node, DrosLogger
+from dros_host.messages.audio import AudioMessage
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
-logger = logging.getLogger("player_node")
+logger = DrosLogger("player_node")
 
-
-class AudioPlayerNode(BaseNode):
+class AudioPlayerNode(Node):
     def __init__(
         self,
-        hub_url: str,
-        topic: str = "audio_stream",
+        bus: Bus,
+        topic: str = "/audio_stream",
         device_index: int = 0,
         buffer_size: int = 64,
     ):
-        super().__init__(hub_url=hub_url, node_name="player_node")
+        super().__init__(bus=bus)
         self.topic = topic
         self.device_index = device_index
         self.buffer_size = buffer_size
@@ -50,9 +46,12 @@ class AudioPlayerNode(BaseNode):
         self.chunks_played = 0
         self.buffer_underruns = 0
 
-        self.handler(self.topic)(self.audio_chunk_callback)
+    def startup(self):
+        super().startup()
+        self.subscribe_stream(self.topic, self.audio_chunk_callback)
+        logger.info(f"Audio player node initialized for topic {self.topic}")
 
-    async def audio_chunk_callback(self, message: dict):
+    def audio_chunk_callback(self, message: dict):
         """Handle incoming audio chunk messages."""
         self.chunks_received += 1
 
@@ -147,6 +146,13 @@ class AudioPlayerNode(BaseNode):
                 pass
             self.stream = None
             self.is_playing = False
+    
+    def shutdown(self):
+        """Shutdown the audio player node."""
+        self._cleanup_stream()
+        if self.audio is not None:
+            self.audio.terminate()
+        logger.info("Audio player node shutdown complete")
 
     def _log_status(self):
         """Log periodic status information."""
@@ -159,62 +165,3 @@ class AudioPlayerNode(BaseNode):
             f"played: {self.chunks_played}, "
             f"underruns: {self.buffer_underruns}"
         )
-
-    async def run(self):
-        # Connect to hub
-        await self.sio.connect(self.hub_url)
-        await self._connected.wait()
-
-        # Subscribe
-        await self.subscribe(self.topic)
-
-        # Initialize audio stream
-        self._init_audio_stream()
-        self.config_received = True
-
-        # Status logging timer
-        async def status_loop():
-            while True:
-                await asyncio.sleep(5.0)
-                self._log_status()
-
-        status_task = asyncio.create_task(status_loop())
-
-        logger.info(f"Audio player node initialized for topic {self.topic}")
-
-        try:
-            while self.sio.connected:
-                await asyncio.sleep(1)
-        except asyncio.CancelledError:
-            pass
-        finally:
-            status_task.cancel()
-            try:
-                await status_task
-            except asyncio.CancelledError:
-                pass
-            self._cleanup_stream()
-            self.audio.terminate()
-            await self.sio.disconnect()
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Audio player node")
-    parser.add_argument("--hub-url", default=None, help="Hub URL")
-    parser.add_argument("--topic", default="/audio_stream", help="Audio room to listen to")
-    parser.add_argument("--device-index", type=int, default=0, help="Audio output device index")
-    parser.add_argument("--buffer-size", type=int, default=64, help="Number of chunks to buffer")
-    args = parser.parse_args()
-
-    hub_url = args.hub_url or os.environ.get("HUB_URL", "http://localhost:5000")
-    node = AudioPlayerNode(
-        hub_url=hub_url,
-        topic=args.topic,
-        device_index=args.device_index,
-        buffer_size=args.buffer_size,
-    )
-    asyncio.run(node.run())
-
-
-if __name__ == "__main__":
-    main()

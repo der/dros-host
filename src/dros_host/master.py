@@ -1,6 +1,8 @@
 import readline
 
 from dros_host.audio_base.asr_node import ASRNode
+from dros_host.audio_base.tts_node import TTSNode
+from dros_host.audio_base.player_node import AudioPlayerNode
 from dros import Bus, DrosLogger, Node, ServerTransport
 from dros_host.llm_support.llm_node import LLMNode
 from dros_host.messages.events import EventMessage
@@ -22,8 +24,10 @@ class EventLogNode(Node):
 def main():
     bus = Bus(transport=ServerTransport(port=5000))  
     EventLogNode(bus)
-    ASRNode(bus, topic="/audio_stream", output_topic="/text_stream")
-    LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", model_name="gemma4:26b")
+#    ASRNode(bus, topic="/audio_stream", output_topic="/text_stream")
+#    LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", model_name="gemma4:26b")
+    TTSNode(bus, input_topic="/text_stream", output_topic="/speech_stream")
+    AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
     bus.run()
 
 if __name__ == "__main__":
