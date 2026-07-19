@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 
 from dros import Bus, DrosLogger, Node
+from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
 from pydantic_ai import Agent, BinaryContent, SystemPromptPart
 from pydantic_ai.messages import (
     ModelMessage,
@@ -19,8 +20,6 @@ from pydantic_ai.messages import (
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.profiles import ModelProfile
 from pydantic_ai.providers.ollama import OllamaProvider
-
-from dros_host.messages.events import EventMessage
 
 logger = DrosLogger("llm_node")
 
@@ -34,7 +33,7 @@ def get_time() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-class LLMNode(Node):
+class LLMNode(EventPublisherMixin, Node):
     def __init__(
         self,
         bus: Bus,
@@ -53,7 +52,7 @@ class LLMNode(Node):
 
     def startup(self):
         """Initialize the LLM agent."""
-        self.subscribe_event("/events")
+        self.subscribe_event(EVENT_TOPIC)
         self.subscribe_stream(self.text_topic, self.message_callback)
         if self.model_name.startswith("gemma4"):
             ollama_model = OpenAIChatModel(
@@ -138,7 +137,7 @@ class LLMNode(Node):
             if self.is_running:
                 logger.info("Stop command received, stopping current LLM response")
                 self.stop = True
-            self.publish("/events", {"type": "llm-in", "message": "stop"})
+            self.publish_event("stop", "llm-in")
             return
 
         self._stream_agent(text)
@@ -147,8 +146,8 @@ class LLMNode(Node):
         text = text.strip()
         if text:
             logger.info(f"LLM response: {text}")
-            self.publish(self.response_topic, {"data": text})
-            self.publish("/events", {"type": "llm", "message": text})
+            self.publish(self.response_topic, {"message": text})
+            self.publish_event(text, "llm")
 
     def _stream_agent(self, text: str):
         self.is_running = True

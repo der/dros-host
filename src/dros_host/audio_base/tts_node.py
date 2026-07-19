@@ -13,7 +13,7 @@ from pocket_tts import TTSModel
 from scipy.signal import resample_poly
 
 from dros import Bus, Node, DrosLogger
-from dros_host.messages.events import EventMessage
+from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
 from dros_host.messages.audio import AudioMessage, AudioData, AudioInfo
 
 logger = DrosLogger("tts_node")
@@ -22,7 +22,7 @@ logger = DrosLogger("tts_node")
 _SENTINEL = object()
 
 
-class TTSNode(Node):
+class TTSNode(EventPublisherMixin, Node):
     def __init__(
         self,
         bus: Bus,
@@ -56,13 +56,13 @@ class TTSNode(Node):
         self.voice_state = self.tts_model.get_state_for_audio_prompt(self.voice_path)
         logger.info("Voice loaded")
 
-        self.subscribe_event("/events", self.event_callback)
+        self.subscribe_event(EVENT_TOPIC, self.event_callback)
         self.subscribe_stream(self.input_topic, self.text_callback)
         logger.info(f"TTS node initialized: {self.input_topic} -> {self.output_topic}")
 
     def text_callback(self, message: dict):
         """Queue incoming text for synthesis."""
-        text = message.get("data", "")
+        text = message.get("message", "")
         text = text.strip()
         if text:
             logger.info(f"Received text for synthesis: {text}")

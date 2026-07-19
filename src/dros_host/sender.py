@@ -3,10 +3,11 @@ import re
 import readline
 
 from dros import Bus, ClientTransport, SourceNode
+from dros_host.messages.events import EVENT_TOPIC
 
 
 class KeyboardEchoNode(SourceNode):
-    def __init__(self, bus, topic="/events"):
+    def __init__(self, bus, topic=EVENT_TOPIC):
         super().__init__(bus)
         self._topic = topic
 
@@ -27,7 +28,7 @@ class KeyboardEchoNode(SourceNode):
             topic = match.group(1)
             remaining_command = match.group(2) or ""
             return topic, remaining_command
-        return "/events", command
+        return EVENT_TOPIC, command
 
     def run(self):
         """

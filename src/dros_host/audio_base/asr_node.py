@@ -16,12 +16,13 @@ from queue import Empty, Queue
 import numpy as np
 from dros import Bus, SourceNode, DrosLogger
 from dros_host.messages.audio import AudioMessage
+from dros_host.messages.events import EVENT_TOPIC, EventPublisherMixin
 from pywhispercpp.model import Model
 
 logger = DrosLogger("asr_node")
 
 
-class ASRNode(SourceNode):
+class ASRNode(EventPublisherMixin, SourceNode):
     def __init__(
         self,
         bus: Bus,
@@ -82,7 +83,7 @@ class ASRNode(SourceNode):
                 text = segment.text
                 logger.info(f"Transcribed segment: {text}")
                 self.publish(self.output_topic, {"message": text})
-                self.publish("/events", {"type": "asr", "message": text})
+                self.publish_event(text, "asr")
 
             self.model.transcribe(buffer, new_segment_callback=segment_callback)
 
