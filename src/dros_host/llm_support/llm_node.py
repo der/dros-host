@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 
 from dros import Bus, DrosLogger, Node
+from dros_host.messages.image import ImageMessage
 from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
 from pydantic_ai import Agent, BinaryContent, SystemPromptPart
 from pydantic_ai.messages import (
@@ -37,13 +38,15 @@ class LLMNode(EventPublisherMixin, Node):
     def __init__(
         self,
         bus: Bus,
-        text_topic: str = "text_stream",
-        response_topic: str = "llm_response",
+        text_topic: str = "/text_stream",
+        response_topic: str = "/llm_response",
+        camera_topic: str = "/marvin/camera",
         model_name: str = "gemma4:26b",
     ):
         super().__init__(bus=bus)
         self.text_topic = text_topic
         self.response_topic = response_topic
+        self.camera_topic = camera_topic
         self.model_name = model_name
         self.messages: list[ModelMessage] | None = None
 
@@ -87,23 +90,21 @@ class LLMNode(EventPublisherMixin, Node):
             self.publish("/marvin/motor", {"speed": speed, "dir": dir, "dist": dist})
             return None
         
-        # async def get_view() -> BinaryContent | str:
-        #     """Get a description of what you see through your camera."""
-        #     logger.info("Getting view from camera")
-        #     image_data = self.call("/marvin/camera-rpc", {"resolution": "full"})
-        #     if image_data is None:
-        #         logger.error("No response from camera server")
-        #         return "I couldn't get a view from the camera."
-        #     elif "error" in image_data and image_data["error"]:
-        #         logger.error(f"Camera server error: {image_data['error']}")
-        #         return "I couldn't get a view from the camera."
-        #     elif "data" in image_data and image_data["data"]:
-        #         logger.info("Received image data from camera")
-        #         format = image_data.get("format", "image/jpeg")
-        #         return BinaryContent(data=image_data["data"], media_type=format)
-        #     else:
-        #         logger.error(f"Unexpected camera response: {image_data}")
-        #         return "I couldn't get a view from the camera."
+        def get_view() -> BinaryContent | str:
+            """Get a description of what you see through your camera."""
+            logger.info("Getting latest camera view")
+            image_msg = self.bus.topic(self.camera_topic).current()
+            image = ImageMessage.model_validate(image_msg)
+            if image.error:
+                logger.error(f"Camera server error: {image.error}")
+                return "I couldn't get a view from the camera."
+            elif image.data:
+                logger.info("Received image data from camera")
+                format = image.format or "image/jpeg"
+                return BinaryContent(data=image.data, media_type=format)
+            else:
+                logger.error(f"Unexpected camera response: {image}")
+                return "I couldn't get a view from the camera."
 
         
         self.agent = Agent(
@@ -114,8 +115,7 @@ class LLMNode(EventPublisherMixin, Node):
                 "Respond to questions VERY BRIEFLY in plain text that the droid can speak aloud."
                 'If the user just says "Marvin" then respond with "Hi"'
             ),
-#            tools=[get_time, move_neck, move_robot, get_view],
-            tools=[get_time, move_neck, move_robot],
+            tools=[get_time, move_neck, move_robot, get_view],
             model_settings={"thinking": False},
         )
 

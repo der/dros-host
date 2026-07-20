@@ -54,22 +54,19 @@ class AudioPlayerNode(Node):
     def audio_chunk_callback(self, message: dict):
         """Handle incoming audio chunk messages."""
         self.chunks_received += 1
+        amsg = AudioMessage.model_validate(message)
 
-        info = message.get("info", {})
-        data = message.get("data", {})
-        event = message.get("event", "")
-
-        fmt = info.get("format", "")
+        fmt = amsg.info.format
         if fmt != self.format:
             logger.info(
                 f"Audio format set to: {fmt}, "
-                f"{info.get('sample_rate')}Hz, {info.get('num_channels')}ch, "
-                f"{info.get('chunk_size')} samples/chunk"
+                f"{amsg.info.sample_rate}Hz, {amsg.info.num_channels}ch, "
+                f"{amsg.info.chunk_size} samples/chunk"
             )
             self.format = fmt
-            self.sample_rate = info.get("sample_rate", self.sample_rate)
-            self.channels = info.get("num_channels", self.channels)
-            self.chunk_size = info.get("chunk_size", self.chunk_size)
+            self.sample_rate = amsg.info.sample_rate
+            self.channels = amsg.info.num_channels
+            self.chunk_size = amsg.info.chunk_size
 
             # Reinitialize audio stream with new format
             if self.stream is not None:
@@ -78,14 +75,14 @@ class AudioPlayerNode(Node):
             self.config_received = True
 
         # Convert to numpy
-        int16_list = data.get("int16_data", [])
+        int16_list = amsg.data.int16_data
         if not int16_list:
             return
-        audio_data = np.array(int16_list, dtype=np.int16)
+        audio_data = np.array(int16_list, dtype=np.int16, copy=True)
 
         # Test for events
-        if event:
-            logger.info(f"Received audio event: {event}")
+        if amsg.event:
+            logger.info(f"Received audio event: {amsg.event}")
 
         # Try to add to queue
         try:

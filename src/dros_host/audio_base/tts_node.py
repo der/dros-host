@@ -75,7 +75,7 @@ class TTSNode(EventPublisherMixin, Node):
             logger.info("Interrupt event received, stopping synthesis")
             if self.is_running:
                 self.stop = True
-            # TODO clear input text message queue - needs framework extension
+            self.clear_topic_queue(self.output_topic)
 
     def _synthesize(self, text: str):
         """Chunked generation of audio messages from the TTS model."""
@@ -112,6 +112,7 @@ class TTSNode(EventPublisherMixin, Node):
 
             if self.stop:
                 logger.info("TTS synthesis stopped mid-stream")
+                self.clear_topic_queue(self.output_topic)
                 self.is_running = False
                 break
 
