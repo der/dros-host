@@ -28,6 +28,19 @@ class CameraNode(Node):
         self.topic = topic
         self.bus.state_topic(self.topic, history=4)
 
+class DistanceSensorNode(Node):
+    def __init__(self, bus, topic="/marvin/dist_heading"):
+        super().__init__(bus)
+        self.topic = topic
+        self.bus.state_topic(self.topic, history=4)
+
+    def startup(self):
+        # self.subscribe_event(self.topic)
+        pass
+
+    def process(self, message):
+        logger.info(f"Distance sensor reading: {message}")
+
 def main():
     bus = Bus(transport=ServerTransport(port=5000))
     EventLogNode(bus)
@@ -36,6 +49,7 @@ def main():
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
     AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
+    DistanceSensorNode(bus, topic="/marvin/dist_heading")
     bus.run()
 
 if __name__ == "__main__":

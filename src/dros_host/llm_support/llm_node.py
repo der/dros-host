@@ -106,6 +106,12 @@ class LLMNode(EventPublisherMixin, Node):
                 logger.error(f"Unexpected camera response: {image}")
                 return "I couldn't get a view from the camera."
 
+        def pause(seconds: float) -> None:
+            """Pause for a specified number of seconds. After a move or pan/tilt pause for 1s before checking the camera view"""
+            logger.info(f"Pausing for {seconds} seconds")
+            import time
+            time.sleep(seconds)
+            return None
         
         self.agent = Agent(
             ollama_model,
@@ -115,7 +121,7 @@ class LLMNode(EventPublisherMixin, Node):
                 "Respond to questions VERY BRIEFLY in plain text that the droid can speak aloud."
                 'If the user just says "Marvin" then respond with "Hi"'
             ),
-            tools=[get_time, move_neck, move_robot, get_view],
+            tools=[get_time, move_neck, move_robot, get_view, pause],
             model_settings={"thinking": False},
         )
 
