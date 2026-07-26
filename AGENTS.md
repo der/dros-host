@@ -69,4 +69,13 @@ Modules (all under `src/dros/`):
 - Stream subscriber threads are daemon threads and share the process lifetime.
 - Client transport emits `subscribe`/`unsubscribe` only when connected. Topics tracked in `_topics` are re-subscribed on reconnect.
 - Server transport forwards remote publishes to other sids but NOT back to the sender (no echo).
-- 
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues in this repo (`der/dros-host`), operated via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` at repo root + `docs/adr/`. See `docs/agents/domain.md`. 
