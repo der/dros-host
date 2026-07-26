@@ -74,7 +74,7 @@ Modules (all under `src/dros/`):
 
 ### Issue tracker
 
-Issues live as GitHub issues in this repo (`der/dros-host`), operated via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live as GitHub issues in this repo (`der/dros-host`). See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 

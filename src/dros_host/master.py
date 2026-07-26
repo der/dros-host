@@ -35,7 +35,7 @@ class DistanceSensorNode(Node):
         self.bus.state_topic(self.topic, history=4)
 
     def startup(self):
-        # self.subscribe_event(self.topic)
+        self.subscribe_event(self.topic)
         pass
 
     def process(self, message):

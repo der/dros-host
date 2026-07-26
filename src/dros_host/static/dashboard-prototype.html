@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Prototype</title>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --card2: #0f3460;
+    --text: #e0e0e0;
+    --muted: #8892b0;
+    --accent: #00d4aa;
+    --warn: #ff6b6b;
+    --orange: #ffa726;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 52px;
+  }
+
+  /* Shared widgets */
+  .card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .card-header {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* Variant switcher */
+  .switcher {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e94560;
+    color: white;
+    border-radius: 10px 10px 0 0;
+    padding: 6px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+  }
+  .switcher button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .switcher button:hover { background: rgba(255,255,255,0.2); }
+
+  /* -- Variant A: Dashboard Grid -- */
+  .vA-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 10px;
+    padding: 12px;
+    height: calc(100vh - 52px);
+  }
+  .vA-camera { grid-column: 1 / -1; background: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; min-height: 180px; }
+  .vA-camera img { max-width: 100%; max-height: 200px; border-radius: 8px; }
+  .vA-camera .placeholder { color: var(--muted); font-size: 0.8rem; }
+  .vA-events { grid-column: 1; grid-row: 2 / 5; }
+  .vA-right { grid-column: 2; display: flex; flex-direction: column; gap: 10px; }
+
+  .event-log { overflow-y: auto; max-height: 240px; font-size: 0.78rem; }
+  .event-log::-webkit-scrollbar { width: 4px; }
+  .event-log::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+  .event-item { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .event-item .type { font-weight: 600; font-size: 0.65rem; text-transform: uppercase; }
+  .event-item .type.asr { color: var(--accent); }
+  .event-item .type.llm { color: var(--orange); }
+
+  .heading-compass { display: flex; align-items: center; gap: 10px; }
+  .compass-rose {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.15);
+    position: relative;
+  }
+  .compass-needle {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 34px; background: var(--warn);
+    transform-origin: bottom center;
+  }
+  .compass-label {
+    position: absolute;
+    font-size: 0.55rem; color: var(--muted);
+  }
+  .compass-label.n { top: 2px; left: 50%; transform: translateX(-50%); }
+  .compass-label.e { right: 2px; top: 50%; transform: translateY(-50%); }
+  .compass-label.s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+  .compass-label.w { left: 2px; top: 50%; transform: translateY(-50%); }
+
+  .dist-bars { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .dist-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dist-bar-label { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; }
+  .dist-bar { width: 24px; height: 60px; background: var(--card2); border-radius: 4px; position: relative; overflow: hidden; }
+  .dist-bar-fill { position: absolute; bottom: 0; width: 100%; border-radius: 4px; }
+
+  .eye-display { display: flex; align-items: center; gap: 16px; }
+  .eye-left, .eye-right {
+    width: 40px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--accent);
+    position: relative;
+    transition: background 0.3s, transform 0.2s;
+  }
+  .eye-pupil {
+    position: absolute; width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 50%; transform: translate(-50%, -50%);
+    transition: left 0.3s;
+  }
+
+  .neck-display { display: flex; gap: 10px; font-size: 0.75rem; }
+  .neck-slider { display: flex; align-items: center; gap: 6px; }
+  .neck-slider track {
+    width: 60px; height: 4px; background: var(--card2); border-radius: 2px;
+    position: relative; display: block;
+  }
+  .neck-slider track::after {
+    content: '';
+    position: absolute; top: -3px;
+    width: 10px; height: 10px; background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* -- Variant B: Chat Feed -- */
+  .vB-wrap {
+    max-width: 640px; margin: 0 auto; padding: 12px;
+    display: flex; flex-direction: column;
+    height: calc(100vh - 52px);
+  }
+  .vB-camera {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--card); border-radius: 10px;
+    padding: 8px 14px; margin-bottom: 10px;
+  }
+  .vB-camera img { max-height: 80px; border-radius: 6px; }
+  .vB-feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+  .vB-feed::-webkit-scrollbar { width: 4px; }
+  .vB-feed::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+  .vB-bubble {
+    max-width: 80%; padding: 8px 12px; border-radius: 12px;
+    margin-bottom: 6px; font-size: 0.82rem; line-height: 1.4;
+  }
+  .vB-bubble.asr { align-self: flex-end; background: var(--card2); }
+  .vB-bubble.llm { align-self: flex-start; background: var(--card); border: 1px solid var(--orange); }
+  .vB-sensors { display: flex; gap: 8px; margin-top: 8px; font-size: 0.7rem; }
+  .vB-sensors .card { flex: 1; min-width: 0; }
+  .vB-sensor-val { font-size: 1.1rem; font-weight: 600; color: var(--accent); }
+
+  /* -- Variant C: Robot Avatar -- */
+  .vC-wrap {
+    display: flex; height: calc(100vh - 52px);
+  }
+  .vC-sidebar {
+    width: 200px; background: var(--card);
+    padding: 10px; display: flex; flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .vC-sidebar .event-log { flex: 1; max-height: none; }
+  .vC-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .vC-robot {
+    width: 220px; height: 220px; border: 3px solid var(--card2);
+    border-radius: 50%; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vC-robot-face { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .vC-eyes { display: flex; gap: 24px; }
+  .vC-eye {
+    width: 36px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--accent);
+    position: relative;
+  }
+  .vC-eye.wide { width: 48px; height: 28px; }
+  .vC-eye.closed { height: 3px; width: 36px; border-radius: 2px; margin-top: 10px; }
+  .vC-pupil { position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .vC-mouth { width: 20px; height: 3px; border-radius: 2px; background: var(--accent); }
+  .vC-dist-arc {
+    position: absolute; inset: -30px; pointer-events: none;
+  }
+  .vC-camera-pip {
+    position: absolute; bottom: 10px; right: 0;
+    width: 140px; background: #000; border: 1px solid var(--card2);
+    border-radius: 8px; overflow: hidden;
+  }
+  .vC-info { margin-top: 14px; display: flex; gap: 20px; font-size: 0.75rem; color: var(--muted); }
+  .vC-info strong { color: var(--accent); }
+
+  /* -- Empty state -- */
+  .empty { color: var(--muted); font-style: italic; font-size: 0.75rem; }
+</style>
+</head>
+<body x-data="dashboard()" x-init="init()">
+
+<!-- ================== VARIANT A ================== -->
+<template x-if="variant === 'A'">
+<div class="vA-grid">
+
+  <div class="vA-camera">
+    <template x-if="cameraHasData">
+      <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera">
+    </template>
+    <template x-if="!cameraHasData">
+      <span class="placeholder">Camera — no image yet</span>
+    </template>
+  </div>
+
+  <div class="vA-events card">
+    <div class="card-header">Events</div>
+    <div class="event-log" x-ref="eventLogA">
+      <template x-for="evt in events" :key="evt.id">
+        <div class="event-item">
+          <span class="type" :class="evt.type === 'asr' ? 'asr' : 'llm'" x-text="evt.type"></span>
+          <span x-text="evt.message"></span>
+        </div>
+      </template>
+      <template x-if="events.length === 0">
+        <div class="empty">Waiting for events...</div>
+      </template>
+    </div>
+  </div>
+
+  <div class="vA-right">
+    <div class="card">
+      <div class="card-header">Heading &amp; Distance</div>
+      <div class="heading-compass">
+        <div class="compass-rose">
+          <span class="compass-label n">N</span>
+          <span class="compass-label e">E</span>
+          <span class="compass-label s">S</span>
+          <span class="compass-label w">W</span>
+          <div class="compass-needle" :style="'transform: translate(-50%, -100%) rotate(' + headingDeg + 'deg)'"></div>
+        </div>
+        <div>
+          <div style="font-size:1rem;font-weight:700;" x-text="heading + '°'"></div>
+          <div class="muted" style="font-size:0.65rem">raw: <span x-text="headingRaw"></span></div>
+        </div>
+      </div>
+      <div class="dist-bars">
+        <div class="dist-bar-wrap">
+          <span class="dist-bar-label">L</span>
+          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[0] + '%; background:' + distColor(dist[0])"></div></div>
+          <span style="font-size:0.6rem" x-text="distLabel(dist[0])"></span>
+        </div>
+        <div class="dist-bar-wrap">
+          <span class="dist-bar-label">C</span>
+          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[1] + '%; background:' + distColor(dist[1])"></div></div>
+          <span style="font-size:0.6rem" x-text="distLabel(dist[1])"></span>
+        </div>
+        <div class="dist-bar-wrap">
+          <span class="dist-bar-label">R</span>
+          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[2] + '%; background:' + distColor(dist[2])"></div></div>
+          <span style="font-size:0.6rem" x-text="distLabel(dist[2])"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Eyes</div>
+      <div class="eye-display">
+        <div class="eye-left" :class="{'closed': !eyesOpen}" :style="!eyesOpen ? 'background:transparent;border-color:var(--muted)' : (eyesWide ? 'transform:scaleX(1.3)' : '')">
+          <template x-if="eyesOpen">
+            <div class="eye-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+          </template>
+        </div>
+        <div class="eye-right" :class="{'closed': !eyesOpen}" :style="!eyesOpen ? 'background:transparent;border-color:var(--muted)' : (eyesWide ? 'transform:scaleX(1.3)' : '')">
+          <template x-if="eyesOpen">
+            <div class="eye-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+          </template>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted)">
+          <div x-text="eyesOpen ? (eyesWide ? 'Wide open' : 'Open') : 'Closed'"></div>
+          <div x-text="'x: ' + eyesX.toFixed(2)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Neck</div>
+      <div class="neck-display">
+        <div class="neck-slider">
+          <span>Pan</span>
+          <span x-text="neckPan + '°'"></span>
+        </div>
+        <div class="neck-slider">
+          <span>Tilt</span>
+          <span x-text="neckTilt + '°'"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</template>
+
+<!-- ================== VARIANT B ================== -->
+<template x-if="variant === 'B'">
+<div class="vB-wrap">
+
+  <div class="vB-camera">
+    <template x-if="cameraHasData">
+      <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera" style="flex-shrink:0">
+    </template>
+    <template x-if="!cameraHasData">
+      <span class="empty" style="width:80px;text-align:center">No image</span>
+    </template>
+    <div style="flex:1">
+      <div style="font-size:0.65rem;color:var(--muted)">CAMERA</div>
+      <div style="font-size:0.75rem" x-text="cameraHasData ? 'Live (last frame 0.3s ago)' : 'Waiting...'"></div>
+    </div>
+  </div>
+
+  <div class="vB-feed" x-ref="eventLogB">
+    <template x-for="evt in events" :key="evt.id">
+      <div class="vB-bubble" :class="evt.type">
+        <div style="font-size:0.6rem;opacity:0.6;text-transform:uppercase;margin-bottom:2px" x-text="evt.type === 'asr' ? 'You said' : 'Marvin'"></div>
+        <span x-text="evt.message"></span>
+      </div>
+    </template>
+    <template x-if="events.length === 0">
+      <div class="empty" style="text-align:center;padding:40px 0">Listening...</div>
+    </template>
+  </div>
+
+  <div class="vB-sensors">
+    <div class="card">
+      <div class="card-header">Heading</div>
+      <div class="vB-sensor-val" x-text="heading + '°'"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Distance</div>
+      <div class="vB-sensor-val" x-text="dist[1] + 'cm'"></div>
+      <div style="font-size:0.6rem;color:var(--muted)">L<span x-text="dist[0]"></span> / R<span x-text="dist[2]"></span></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Eyes</div>
+      <div class="vB-sensor-val" x-text="eyesOpen ? (eyesWide ? 'Wide' : 'Open') : 'Closed'"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Neck</div>
+      <div class="vB-sensor-val" x-text="neckPan + '°/' + neckTilt + '°'"></div>
+    </div>
+  </div>
+
+</div>
+</template>
+
+<!-- ================== VARIANT C ================== -->
+<template x-if="variant === 'C'">
+<div class="vC-wrap">
+
+  <div class="vC-sidebar">
+    <div class="card-header" style="margin-bottom:8px">Events</div>
+    <div class="event-log" x-ref="eventLogC">
+      <template x-for="evt in events" :key="evt.id">
+        <div class="event-item">
+          <span class="type" :class="evt.type === 'asr' ? 'asr' : 'llm'" x-text="evt.type"></span>
+          <span x-text="evt.message"></span>
+        </div>
+      </template>
+      <template x-if="events.length === 0">
+        <div class="empty">Waiting...</div>
+      </template>
+    </div>
+  </div>
+
+  <div class="vC-center">
+    <div class="vC-robot">
+      <!-- distance arcs -->
+      <svg class="vC-dist-arc" viewBox="0 0 280 280">
+        <template x-for="(d, i) in dist" :key="i">
+          <path :d="distArcPath(i, d)" :stroke="distColor(d)" stroke-width="2" fill="none" opacity="0.6"/>
+        </template>
+        <text x="140" y="18" text-anchor="middle" fill="var(--muted)" font-size="8">N</text>
+        <text x="140" y="274" text-anchor="middle" fill="var(--muted)" font-size="8">S</text>
+        <!-- heading pointer at top-edge of arc -->
+        <line :x1="140" :y1="140" :x2="headingX(140, 40)" :y2="headingY(140, 40)" stroke="var(--warn)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+
+      <div class="vC-robot-face">
+        <div class="vC-eyes">
+          <div :class="'vC-eye' + (eyesWide ? ' wide' : '') + (!eyesOpen ? ' closed' : '')">
+            <template x-if="eyesOpen">
+              <div class="vC-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+            </template>
+          </div>
+          <div :class="'vC-eye' + (eyesWide ? ' wide' : '') + (!eyesOpen ? ' closed' : '')">
+            <template x-if="eyesOpen">
+              <div class="vC-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+            </template>
+          </div>
+        </div>
+        <div class="vC-mouth"></div>
+      </div>
+
+      <div class="vC-camera-pip">
+        <template x-if="cameraHasData">
+          <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera" style="width:100%">
+        </template>
+        <template x-if="!cameraHasData">
+          <div style="height:70px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.7rem">No camera</div>
+        </template>
+      </div>
+    </div>
+
+    <div class="vC-info">
+      <span>Dist: <strong x-text="dist[1] + 'cm'"></strong></span>
+      <span>Neck: <strong x-text="neckPan + '/' + neckTilt + '°'"></strong></span>
+    </div>
+  </div>
+
+</div>
+</template>
+
+<!-- ================== SWITCHER ================== -->
+<div class="switcher">
+  <button @click="prevVariant" aria-label="Previous variant">&larr;</button>
+  <span x-text="'Variant ' + variant + ' — ' + variantNames[variant]"></span>
+  <button @click="nextVariant" aria-label="Next variant">&rarr;</button>
+</div>
+
+<script>
+function dashboard() {
+  // --- Sample data ---
+  const sampleEvents = [
+    { id: 8, type: 'asr', message: 'What do you see in front of you?' },
+    { id: 7, type: 'llm', message: 'I can see a person standing about two meters ahead, slightly to my right.' },
+    { id: 6, type: 'asr', message: 'Turn around and look for obstacles.' },
+    { id: 5, type: 'llm', message: 'I am turning to face south. The path ahead looks clear for at least three meters.' },
+    { id: 4, type: 'asr', message: 'What is the temperature in the room?' },
+    { id: 3, type: 'llm', message: 'I don\'t have a thermometer but the room feels comfortable, roughly 21 degrees.' },
+    { id: 2, type: 'asr', message: 'Move forward slowly.' },
+    { id: 1, type: 'llm', message: 'Moving forward at low speed. I am monitoring the distance sensors.' },
+  ];
+
+  const sampleEyes = { open: true, wide: false, x: -0.15 };
+  const sampleNeck = { pan: 75.0, tilt: 45.0, speed: 5 };
+  const sampleDistHeading = { heading: 127, dist: [120, 250, 78], pitch: 0 };
+
+  // --- State ---
+  const params = new URLSearchParams(window.location.search);
+  const initialVariant = params.get('variant') || 'A';
+
+  return {
+    variant: initialVariant,
+    variantNames: {
+      A: 'Dashboard Grid', B: 'Chat Feed', C: 'Robot Avatar'
+    },
+
+    // live data
+    events: sampleEvents,
+    eyesOpen: sampleEyes.open,
+    eyesWide: sampleEyes.wide,
+    eyesX: sampleEyes.x,
+    neckPan: sampleNeck.pan,
+    neckTilt: sampleNeck.tilt,
+    headingRaw: sampleDistHeading.heading,
+    dist: sampleDistHeading.dist,
+    cameraData: null,
+    cameraHasData: false,
+
+    // --- Computed ---
+    get heading() {
+      return Math.round((this.headingRaw / 255) * 360);
+    },
+    get headingDeg() {
+      return this.heading;
+    },
+    get distPct() {
+      const max = 300; // cm reference for bar height
+      return this.dist.map(d => Math.min(100, (d / max) * 100));
+    },
+
+    // --- Methods ---
+    distLabel(d) { return d + 'cm'; },
+    distColor(d) {
+      if (d < 60) return 'var(--warn)';
+      if (d < 120) return 'var(--orange)';
+      return 'var(--accent)';
+    },
+
+    // Variant C: arc paths
+    distArcPath(i, d) {
+      const cx = 140, cy = 140;
+      const maxR = 130, minR = 90;
+      const r = minR + (d / 300) * (maxR - minR);
+      // 3 arcs: left (S→W), centre (SE→SW), right (E→S)... actually let's do front 180°
+      // i=0 left sweep: 90 to 135, i=1 centre: 45 to 135, i=2 right: 45 to 90
+      // But arcs are independent per sensor; draw small arcs at different positions
+      const arcs = [
+        { start: 200, end: 250 },  // left
+        { start: 175, end: 185 },  // centre
+        { start: 110, end: 160 },  // right
+      ];
+      const a = arcs[i] || arcs[1];
+      const s = a.start * Math.PI / 180;
+      const e = a.end * Math.PI / 180;
+      const x1 = cx + r * Math.cos(s);
+      const y1 = cy + r * Math.sin(s);
+      const x2 = cx + r * Math.cos(e);
+      const y2 = cy + r * Math.sin(e);
+      const sweep = e - s > Math.PI ? 1 : 0;
+      return `M ${x1} ${y1} A ${r} ${r} 0 0 ${sweep} ${x2} ${y2}`;
+    },
+    headingX(cx, len) {
+      const rad = (this.headingDeg - 90) * Math.PI / 180;
+      return cx + len * Math.cos(rad);
+    },
+    headingY(cy, len) {
+      const rad = (this.headingDeg - 90) * Math.PI / 180;
+      return cy + len * Math.sin(rad);
+    },
+
+    // --- Switcher ---
+    nextVariant() {
+      const keys = Object.keys(this.variantNames);
+      const idx = keys.indexOf(this.variant);
+      this.variant = keys[(idx + 1) % keys.length];
+      this.updateUrl();
+    },
+    prevVariant() {
+      const keys = Object.keys(this.variantNames);
+      const idx = keys.indexOf(this.variant);
+      this.variant = keys[(idx - 1 + keys.length) % keys.length];
+      this.updateUrl();
+    },
+    updateUrl() {
+      const url = new URL(window.location);
+      url.searchParams.set('variant', this.variant);
+      window.history.replaceState({}, '', url);
+    },
+
+    // --- Init ---
+    init() {
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); this.nextVariant(); }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); this.prevVariant(); }
+      });
+
+      // Simulate a fake camera image (gray placeholder canvas)
+      const canvas = document.createElement('canvas');
+      canvas.width = 320; canvas.height = 180;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, 320, 180);
+      ctx.fillStyle = '#444';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Sample camera frame', 160, 86);
+      ctx.strokeStyle = '#555';
+      ctx.strokeRect(10, 60, 300, 40);
+      this.cameraData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+      this.cameraHasData = true;
+    },
+  };
+}
+</script>
+</body>
+</html>
