@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marvin Dashboard</title>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --card2: #e8ecf1;
+    --text: #1a1a2e;
+    --muted: #6b7b8d;
+    --accent: #00a86b;
+    --warn: #e74c3c;
+    --orange: #e67e22;
+    --border: #dce1e8;
+    --connected: #27ae60;
+    --disconnected: #e74c3c;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    min-height: 100vh;
+  }
+
+  /* Connection bar */
+  .conn-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 16px; font-size: 0.75rem;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .conn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .conn-dot.connected { background: var(--connected); }
+  .conn-dot.disconnected { background: var(--disconnected); }
+
+  /* Widget cards */
+  .card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .card-header {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .card-disconnected {
+    position: absolute; inset: 0;
+    background: rgba(245, 245, 245, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; color: var(--muted);
+    border-radius: 10px; z-index: 10;
+  }
+
+  /* Dashboard Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 12px;
+    padding: 14px;
+    height: calc(100vh - 30px);
+  }
+  .camera-panel { grid-column: 1 / -1; }
+  .events-panel { grid-column: 1; grid-row: 2 / 5; display: flex; flex-direction: column; }
+  .right-col { grid-column: 2; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Camera */
+  .camera-container {
+    background: #000; border-radius: 10px; min-height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .camera-container img {
+    max-width: 100%; max-height: 260px; border-radius: 8px;
+  }
+  .camera-error {
+    color: var(--warn); font-size: 0.85rem; text-align: center;
+  }
+  .camera-placeholder { color: var(--muted); font-size: 0.9rem; }
+
+  /* Events */
+  .event-log {
+    flex: 1; overflow-y: auto; font-size: 0.85rem;
+    display: flex; flex-direction: column;
+  }
+  .event-log::-webkit-scrollbar { width: 5px; }
+  .event-log::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+  .event-item {
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: baseline;
+  }
+  .event-type {
+    font-weight: 700; font-size: 0.65rem; text-transform: uppercase;
+    flex-shrink: 0; min-width: 32px;
+  }
+  .event-type.asr { color: var(--accent); }
+  .event-type.llm { color: var(--orange); }
+  .event-msg { color: var(--text); line-height: 1.4; }
+  .empty-state { color: var(--muted); font-style: italic; padding: 20px 0; text-align: center; font-size: 0.85rem; }
+
+  /* Heading compass */
+  .heading-row { display: flex; align-items: center; gap: 12px; }
+  .compass {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 2px solid var(--border); position: relative; flex-shrink: 0;
+  }
+  .compass-needle {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 32px; background: var(--accent);
+    transform-origin: bottom center;
+  }
+  .compass-n { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--muted); }
+  .compass-e { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--muted); }
+  .compass-s { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--muted); }
+  .compass-w { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--muted); }
+  .heading-val { font-size: 1.2rem; font-weight: 700; }
+
+  /* Distance bars */
+  .dist-bars { display: flex; gap: 12px; justify-content: center; margin-top: 10px; }
+  .dist-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dist-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  .dist-bar { width: 28px; height: 64px; background: var(--card2); border-radius: 4px; position: relative; overflow: hidden; }
+  .dist-fill { position: absolute; bottom: 0; width: 100%; border-radius: 4px; transition: height 0.3s; }
+  .dist-value { font-size: 0.65rem; font-weight: 600; }
+
+  /* Eyes */
+  .eyes-row { display: flex; align-items: center; gap: 20px; }
+  .eye {
+    width: 44px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--accent); position: relative;
+    transition: background 0.3s, transform 0.2s;
+  }
+  .eye.wide { transform: scaleX(1.3); }
+  .eye.closed {
+    height: 4px; background: transparent; border-color: var(--muted);
+    margin-top: 13px;
+  }
+  .pupil {
+    position: absolute; width: 8px; height: 8px;
+    background: var(--accent); border-radius: 50%;
+    top: 50%; transform: translate(-50%, -50%);
+    transition: left 0.3s;
+  }
+  .eye-state { font-size: 0.75rem; color: var(--muted); }
+
+  /* Neck */
+  .neck-row { display: flex; gap: 16px; font-size: 0.85rem; }
+  .neck-val { display: flex; align-items: center; gap: 6px; }
+  .neck-val span:first-child { color: var(--muted); }
+  .neck-val span:last-child { font-weight: 700; }
+
+  /* No-data placeholder within widget */
+  .placeholder { color: var(--muted); font-style: italic; font-size: 0.8rem; }
+
+  .sensor-placeholder { display: flex; align-items: center; justify-content: center; min-height: 60px; }
+</style>
+</head>
+<body x-data="dashboard()" x-init="init()">
+
+<div class="conn-bar">
+  <div class="conn-dot" :class="connected ? 'connected' : 'disconnected'"></div>
+  <span x-text="connected ? 'Connected' : 'Disconnected'"></span>
+</div>
+
+<div class="grid">
+
+  <div class="camera-panel card" style="padding:0;border:none">
+    <div class="camera-container" style="position:relative">
+      <template x-if="cameraError">
+        <div class="camera-error" x-text="cameraError"></div>
+      </template>
+      <template x-if="!cameraError && cameraData">
+        <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera">
+      </template>
+      <template x-if="!cameraError && !cameraData">
+        <div class="camera-placeholder">Camera — no image yet</div>
+      </template>
+      <div class="" x-show="!connected" style="position:absolute;inset:0;background:rgba(245,245,245,0.85);display:flex;align-items:center;justify-content:center;border-radius:10px;">
+        <template x-if="!connected">
+          <span style="color:var(--muted);font-size:0.8rem">Disconnected</span>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <div class="events-panel card">
+    <div class="card-header">Conversation</div>
+    <div class="event-log" x-ref="eventLog">
+      <template x-for="evt in events" :key="evt.id">
+        <div class="event-item">
+          <span class="event-type" :class="evt.type" x-text="evt.type"></span>
+          <span class="event-msg" x-text="evt.message"></span>
+        </div>
+      </template>
+      <template x-if="events.length === 0">
+        <div class="empty-state">Waiting for events...</div>
+      </template>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="card">
+      <div class="card-header">Heading &amp; Distance</div>
+      <template x-if="hasDist">
+        <div>
+          <div class="heading-row">
+            <div class="compass">
+              <span class="compass-n">N</span>
+              <span class="compass-e">E</span>
+              <span class="compass-s">S</span>
+              <span class="compass-w">W</span>
+              <div class="compass-needle" :style="'transform: translate(-50%, -100%) rotate(' + headingDeg + 'deg)'"></div>
+            </div>
+            <div class="heading-val" x-text="headingDeg + '&deg;'"></div>
+          </div>
+          <div class="dist-bars">
+            <div class="dist-wrap">
+              <span class="dist-label">L</span>
+              <div class="dist-bar"><div class="dist-fill" :style="'height:' + distPct(0) + '%; background:' + distColor(dist[0])"></div></div>
+              <span class="dist-value" x-text="dist[0] !== null ? dist[0] + 'cm' : '---'"></span>
+            </div>
+            <div class="dist-wrap">
+              <span class="dist-label">C</span>
+              <div class="dist-bar"><div class="dist-fill" :style="'height:' + distPct(1) + '%; background:' + distColor(dist[1])"></div></div>
+              <span class="dist-value" x-text="dist[1] !== null ? dist[1] + 'cm' : '---'"></span>
+            </div>
+            <div class="dist-wrap">
+              <span class="dist-label">R</span>
+              <div class="dist-bar"><div class="dist-fill" :style="'height:' + distPct(2) + '%; background:' + distColor(dist[2])"></div></div>
+              <span class="dist-value" x-text="dist[2] !== null ? dist[2] + 'cm' : '---'"></span>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template x-if="!hasDist">
+        <div class="sensor-placeholder"><span class="placeholder">Waiting for sensor data...</span></div>
+      </template>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Eyes</div>
+      <template x-if="hasEyes">
+        <div>
+          <div class="eyes-row">
+            <div class="eye" :class="{'closed': !eyesOpen, 'wide': eyesWide}">
+              <template x-if="eyesOpen">
+                <div class="pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+              </template>
+            </div>
+            <div class="eye" :class="{'closed': !eyesOpen, 'wide': eyesWide}">
+              <template x-if="eyesOpen">
+                <div class="pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
+              </template>
+            </div>
+            <div class="eye-state">
+              <div x-text="eyesOpen ? (eyesWide ? 'Wide open' : 'Open') : 'Closed'"></div>
+              <div x-text="'gaze: ' + eyesX.toFixed(2)"></div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template x-if="!hasEyes">
+        <div class="sensor-placeholder"><span class="placeholder">Waiting for eye data...</span></div>
+      </template>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Neck</div>
+      <template x-if="hasNeck">
+        <div>
+          <div class="neck-row">
+            <div class="neck-val"><span>Pan</span><span x-text="neckPan + '&deg;'"></span></div>
+            <div class="neck-val"><span>Tilt</span><span x-text="neckTilt + '&deg;'"></span></div>
+          </div>
+        </div>
+      </template>
+      <template x-if="!hasNeck">
+        <div class="sensor-placeholder"><span class="placeholder">Waiting for neck data...</span></div>
+      </template>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function dashboard() {
+  const D_REF = 300;
+  let eventId = 0;
+
+  return {
+    connected: false,
+    events: [],
+    cameraData: null,
+    cameraError: null,
+    dist: [null, null, null],
+    headingRaw: 0,
+    hasDist: false,
+    eyesOpen: true,
+    eyesWide: false,
+    eyesX: 0,
+    hasEyes: false,
+    neckPan: 0,
+    neckTilt: 0,
+    hasNeck: false,
+    socket: null,
+    reconnectAttempts: 0,
+
+    get headingDeg() {
+      return Math.round((this.headingRaw / 255) * 360);
+    },
+
+    distPct(idx) {
+      const v = this.dist[idx];
+      if (v === null) return 0;
+      return Math.min(100, (v / D_REF) * 100);
+    },
+
+    distColor(d) {
+      if (d === null) return 'var(--muted)';
+      if (d < 60) return 'var(--warn)';
+      if (d < 120) return 'var(--orange)';
+      return 'var(--accent)';
+    },
+
+    handleCamera(msg) {
+      if (msg.error) {
+        this.cameraError = msg.error;
+        return;
+      }
+      this.cameraError = null;
+      if (msg.data) this.cameraData = msg.data;
+    },
+
+    handleEvent(msg) {
+      const evtType = msg.type || 'generic';
+      const evtMsg = msg.message || '';
+      this.events.push({ id: ++eventId, type: evtType, message: evtMsg });
+      this.$nextTick(() => {
+        const log = this.$refs.eventLog;
+        if (log) { log.scrollTop = log.scrollHeight; }
+      });
+    },
+
+    handleDist(msg) {
+      this.hasDist = true;
+      if (typeof msg.heading === 'number') this.headingRaw = msg.heading;
+      if (Array.isArray(msg.dist)) {
+        for (let i = 0; i < 3; i++) {
+          if (typeof msg.dist[i] === 'number') this.dist[i] = msg.dist[i];
+        }
+      }
+    },
+
+    handleEyes(msg) {
+      this.hasEyes = true;
+      if (typeof msg.open === 'boolean') this.eyesOpen = msg.open;
+      if (typeof msg.wide === 'boolean') this.eyesWide = msg.wide;
+      if (typeof msg.x === 'number') this.eyesX = Math.max(-1, Math.min(1, msg.x));
+    },
+
+    handleNeck(msg) {
+      this.hasNeck = true;
+      if (typeof msg.pan === 'number') this.neckPan = msg.pan;
+      if (typeof msg.tilt === 'number') this.neckTilt = msg.tilt;
+    },
+
+    connect() {
+      if (this.socket) {
+        try { this.socket.disconnect(); } catch (e) { /* ignore */ }
+      }
+
+      const wsUrl = 'http://' + window.location.host;
+      const sock = io(wsUrl, {
+        transports: ['polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+      });
+      this.socket = sock;
+
+      sock.on('connect', () => {
+        this.connected = true;
+
+        sock.emit('subscribe', '/marvin/camera');
+        sock.emit('subscribe', '/events');
+        sock.emit('subscribe', '/marvin/dist_heading');
+        sock.emit('subscribe', '/marvin/eyes');
+        sock.emit('subscribe', '/marvin/neck');
+      });
+
+      sock.on('disconnect', () => {
+        this.connected = false;
+      });
+
+      sock.on('publish', (data) => {
+        const topic = data.topic;
+        const msg = data.message || {};
+        switch (topic) {
+          case '/marvin/camera': this.handleCamera(msg); break;
+          case '/events': this.handleEvent(msg); break;
+          case '/marvin/dist_heading': this.handleDist(msg); break;
+          case '/marvin/eyes': this.handleEyes(msg); break;
+          case '/marvin/neck': this.handleNeck(msg); break;
+        }
+      });
+    },
+
+    init() {
+      this.connect();
+    },
+  };
+}
+</script>
+</body>
+</html>

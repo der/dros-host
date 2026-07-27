@@ -1,10 +1,13 @@
+import tempfile
 import threading
 import time
+import urllib.error
+import urllib.request
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 import pytest
-
 from dros import Bus
 from dros._transport import ServerTransport
 
@@ -132,3 +135,45 @@ class TestHub:
         assert event.wait(timeout=2)
         assert received == [{"x": 1}]
         bus.stop()
+
+    def test_static_file_serving(self) -> None:
+        dashboard_html = "<html><body>Dashboard</body></html>"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dash_path = Path(tmpdir) / "dashboard.html"
+            dash_path.write_text(dashboard_html)
+
+            transport = ServerTransport(
+                host="127.0.0.1",
+                port=0,
+                ping_timeout=1,
+                ping_interval=1,
+                static_dir=tmpdir,
+            )
+            bus = Bus(transport=transport, max_workers=2)
+            bus.start()
+            try:
+                url = f"http://127.0.0.1:{transport.port}/dashboard"
+                with urllib.request.urlopen(url, timeout=3) as resp:  # noqa: S310
+                    assert resp.status == 200
+                    assert resp.headers.get("Content-Type") == "text/html"
+                    body = resp.read().decode("utf-8")
+                    assert body == dashboard_html
+            finally:
+                bus.stop()
+
+    def test_static_dir_not_configured_returns_404(self) -> None:
+        transport = ServerTransport(
+            host="127.0.0.1",
+            port=0,
+            ping_timeout=1,
+            ping_interval=1,
+        )
+        bus = Bus(transport=transport, max_workers=2)
+        bus.start()
+        try:
+            url = f"http://127.0.0.1:{transport.port}/dashboard"
+            with pytest.raises(urllib.error.HTTPError) as exc_info:
+                urllib.request.urlopen(url, timeout=3)  # noqa: S310
+            assert exc_info.value.code == 404
+        finally:
+            bus.stop()
