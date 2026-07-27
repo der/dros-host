@@ -35,3 +35,9 @@ topic=/marvin/eyes {"x": 0.0}
 topic=/marvin/motor {"speed": 50, "dir": "f"}
 topic=/marvin/neck {"pan": 20, "tilt": 50}
 ```
+
+## Dashboard
+
+Web dashboard served as a static file from `src/dros_host/static/dashboard.html` which uses socket.io to directly show camera, event stream and heading info.
+
+Go to http://localhost:5000/dashboard

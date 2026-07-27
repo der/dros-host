@@ -6,6 +6,7 @@ from dros_host.audio_base.player_node import AudioPlayerNode
 from dros import Bus, DrosLogger, Node, ServerTransport
 from dros_host.llm_support.llm_node import LLMNode
 from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
+from dros_host.messages.image import ImageMessage
 
 logger = DrosLogger("events")
 logger.setLevel("DEBUG")
@@ -27,6 +28,23 @@ class CameraNode(Node):
         super().__init__(bus)
         self.topic = topic
         self.bus.state_topic(self.topic, history=4)
+        self.subscribe_event(self.topic)
+
+    def process(self, message):
+        image = ImageMessage.model_validate(message)
+        logger.info(f"Camera image received: {len(image.data)} bytes") 
+        pass
+
+class EchoEyeNode(Node):
+    def __init__(self, bus, topic="/marvin/eyes"):
+        super().__init__(bus)
+        self.topic = topic
+        self.bus.state_topic(self.topic, history=1)
+        self.subscribe_event(self.topic)
+
+    def process(self, message):
+        # logger.info(f"Echo eye reading: {message}")
+        pass
 
 class DistanceSensorNode(Node):
     def __init__(self, bus, topic="/marvin/dist_heading"):
@@ -40,8 +58,10 @@ class DistanceSensorNode(Node):
 
     def process(self, message):
         logger.info(f"Distance sensor reading: {message}")
+        pass
 
 def main():
+#    bus = Bus(transport=ServerTransport(port=5000, static_dir="src/dros_host/static"))
     bus = Bus(transport=ServerTransport(port=5000))
     EventLogNode(bus)
     CameraNode(bus, topic="/marvin/camera")
@@ -50,6 +70,7 @@ def main():
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
     AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
+    EchoEyeNode(bus, topic="/marvin/eyes")
     bus.run()
 
 if __name__ == "__main__":

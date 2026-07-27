@@ -186,7 +186,7 @@
         <div class="camera-error" x-text="cameraError"></div>
       </template>
       <template x-if="!cameraError && cameraData">
-        <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera">
+        <img :src="cameraData" alt="Camera">
       </template>
       <template x-if="!cameraError && !cameraData">
         <div class="camera-placeholder">Camera — no image yet</div>
@@ -344,7 +344,16 @@ function dashboard() {
         return;
       }
       this.cameraError = null;
-      if (msg.data) this.cameraData = msg.data;
+      if (msg.data) {
+        if (msg.data instanceof ArrayBuffer) {
+          if (this.cameraData) URL.revokeObjectURL(this.cameraData);
+          this.cameraData = URL.createObjectURL(
+            new Blob([msg.data], { type: "image/jpeg" })
+          );
+        } else if (typeof msg.data === "string") {
+          this.cameraData = "data:image/jpeg;base64," + msg.data;
+        }
+      }
     },
 
     handleEvent(msg) {
@@ -387,7 +396,7 @@ function dashboard() {
 
       const wsUrl = 'http://' + window.location.host;
       const sock = io(wsUrl, {
-        transports: ['polling'],
+        transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
