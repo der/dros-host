@@ -31,8 +31,8 @@ class CameraNode(Node):
         self.subscribe_event(self.topic)
 
     def process(self, message):
-        image = ImageMessage.model_validate(message)
-        logger.info(f"Camera image received: {len(image.data)} bytes") 
+        # image = ImageMessage.model_validate(message)
+        # logger.info(f"Camera image received: {len(image.data)} bytes") 
         pass
 
 class EchoEyeNode(Node):
@@ -57,15 +57,15 @@ class DistanceSensorNode(Node):
         pass
 
     def process(self, message):
-        logger.info(f"Distance sensor reading: {message}")
+        # logger.info(f"Distance sensor reading: {message}")
         pass
 
 def main():
-#    bus = Bus(transport=ServerTransport(port=5000, static_dir="src/dros_host/static"))
-    bus = Bus(transport=ServerTransport(port=5000))
+    bus = Bus(transport=ServerTransport(port=5000, static_dir="src/dros_host/static"))
+#    bus = Bus(transport=ServerTransport(port=5000))
     EventLogNode(bus)
     CameraNode(bus, topic="/marvin/camera")
-    ASRNode(bus, topic="/audio_stream", output_topic="/text_stream")
+    ASRNode(bus, topic="/audio_stream", output_topic="/text_stream", model_name="large-v3-turbo-q5_0")
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
     AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
