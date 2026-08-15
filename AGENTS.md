@@ -76,6 +76,10 @@ Modules (all under `src/dros/`):
 
 Issues live as GitHub issues in this repo (`der/dros-host`). See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Default canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context — one `CONTEXT.md` at repo root + `docs/adr/`. See `docs/agents/domain.md`. 
