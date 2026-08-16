@@ -99,6 +99,7 @@ class TestTick:
         assert msg.y == 0.0
         assert msg.size == 0.25
         assert msg.confidence == 0.9
+        assert msg.bbox == (0.25, 0.25, 0.5, 0.5)
 
     def test_offset_to_edges(self, bus: Bus, events: list[dict[str, object]]) -> None:
         node = FaceNode(
@@ -114,6 +115,7 @@ class TestTick:
         assert msg.x == pytest.approx(1.0)
         assert msg.y == pytest.approx(-1.0)
         assert msg.size == pytest.approx(1.0)
+        assert msg.bbox == (0.0, 0.0, 1.0, 1.0)
 
     def test_selects_strongest_face(self, bus: Bus, events: list[dict[str, object]]) -> None:
         low = face(confidence=0.3, nose=(0.1, 0.5))
@@ -125,6 +127,7 @@ class TestTick:
         msg = reading(bus)
         assert msg.confidence == 0.8
         assert msg.x == pytest.approx(0.8)
+        assert msg.bbox == (0.25, 0.25, 0.5, 0.5)
 
     def test_below_threshold_is_no_face(self, bus: Bus, events: list[dict[str, object]]) -> None:
         node = FaceNode(bus, detector=FakeDetector([face(confidence=0.4)]))
@@ -135,6 +138,7 @@ class TestTick:
         assert msg.present is False
         assert msg.x == 0.0
         assert msg.confidence == 0.0
+        assert msg.bbox == (0.0, 0.0, 0.0, 0.0)
 
     def test_no_faces_yields_zero_message(self, bus: Bus, events: list[dict[str, object]]) -> None:
         node = FaceNode(bus, detector=FakeDetector([]))
@@ -161,7 +165,7 @@ class TestEdgeEvents:
         bus.publish(CAMERA_TOPIC, jpeg_frame())
         node.tick()
         assert wait_for(lambda: len(events) == 1)
-        assert events[0] == {"type": "face", "message": "Face detected"}
+        assert events[0] == {"type": "face", "message": "Face detected at 0.0, 0.0: confidence 0.9"}
 
     def test_fire_once_per_transition(self, bus: Bus, events: list[dict[str, object]]) -> None:
         detector = FakeDetector([])
@@ -182,7 +186,10 @@ class TestEdgeEvents:
         node.tick()
 
         assert wait_for(lambda: len(events) == 2)
-        assert [e["message"] for e in events] == ["Face detected", "Face lost"]
+        assert [e["message"] for e in events] == [
+            "Face detected at 0.0, 0.0: confidence 0.9",
+            "Face lost",
+        ]
         assert all(e["type"] == "face" for e in events)
 
     def test_no_event_on_steady_face(self, bus: Bus, events: list[dict[str, object]]) -> None:

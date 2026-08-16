@@ -17,7 +17,7 @@ _Avoid_: `/marvin_camera` (research-note typo).
 
 **/face_detect**:
 State topic (`history=4`) carrying the current face reading published by the
-face node. Schema: `{present, x, y, size, confidence}` (see fields below).
+face node. Schema: `{present, x, y, size, confidence, bbox}` (see fields below).
 
 **/events**:
 Event topic carrying notifications from any node. Payload is `EventMessage`.
@@ -76,6 +76,11 @@ Normalized face bbox area `bbox_area / (W * H)`, range [0, 1].
 
 **confidence**:
 The selected face's detector score, range [0, 1].
+
+**bbox**:
+The selected face's bounding box as normalized `(x, y, w, h)` with top-left
+origin, range [0, 1] (matches `FaceDetection.bbox`). Transport-safe across
+resolution changes. _Avoid_: pixel coordinates.
 
 ### Behaviour
 

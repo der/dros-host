@@ -17,7 +17,7 @@
     --accent: #00a86b;
     --warn: #e74c3c;
     --orange: #e67e22;
-    --face: #8e44ad;
+    --face: #ceeb57;
     --border: #dce1e8;
     --connected: #27ae60;
     --disconnected: #e74c3c;
@@ -88,7 +88,22 @@
     overflow: hidden; position: relative;
   }
   .camera-container img {
+    display: block;
     max-width: 100%; max-height: 512px; border-radius: 8px;
+  }
+  .camera-stage {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    max-width: 100%;
+    max-height: 512px;
+  }
+  .face-box {
+    position: absolute;
+    border: 2px solid var(--face);
+    border-radius: 4px;
+    box-sizing: border-box;
+    pointer-events: none;
   }
   .camera-error {
     color: var(--warn); font-size: 0.85rem; text-align: center;
@@ -188,7 +203,12 @@
         <div class="camera-error" x-text="cameraError"></div>
       </template>
       <template x-if="!cameraError && cameraData">
-        <img :src="cameraData" alt="Camera">
+        <div class="camera-stage">
+          <img :src="cameraData" alt="Camera">
+          <div class="face-box"
+               x-show="facePresent"
+               :style="'left:' + (faceBBox[0] * 100) + '%;top:' + (faceBBox[1] * 100) + '%;width:' + (faceBBox[2] * 100) + '%;height:' + (faceBBox[3] * 100) + '%'"></div>
+        </div>
       </template>
       <template x-if="!cameraError && !cameraData">
         <div class="camera-placeholder">Camera — no image yet</div>
@@ -310,6 +330,8 @@ function dashboard() {
     events: [],
     cameraData: null,
     cameraError: null,
+    facePresent: false,
+    faceBBox: [0, 0, 0, 0],
     dist: [null, null, null],
     headingRaw: 0,
     hasDist: false,
@@ -355,6 +377,13 @@ function dashboard() {
         } else if (typeof msg.data === "string") {
           this.cameraData = "data:image/jpeg;base64," + msg.data;
         }
+      }
+    },
+
+    handleFace(msg) {
+      this.facePresent = !!msg.present;
+      if (Array.isArray(msg.bbox)) {
+        this.faceBBox = msg.bbox;
       }
     },
 
@@ -410,6 +439,7 @@ function dashboard() {
         this.connected = true;
 
         sock.emit('subscribe', '/marvin/camera');
+        sock.emit('subscribe', '/face_detect');
         sock.emit('subscribe', '/events');
         sock.emit('subscribe', '/marvin/dist_heading');
         sock.emit('subscribe', '/marvin/eyes');
@@ -425,6 +455,7 @@ function dashboard() {
         const msg = data.message || {};
         switch (topic) {
           case '/marvin/camera': this.handleCamera(msg); break;
+          case '/face_detect': this.handleFace(msg); break;
           case '/events': this.handleEvent(msg); break;
           case '/marvin/dist_heading': this.handleDist(msg); break;
           case '/marvin/eyes': this.handleEyes(msg); break;

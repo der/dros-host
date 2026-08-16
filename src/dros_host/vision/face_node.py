@@ -67,7 +67,7 @@ class FaceNode(EventPublisherMixin, Node):
             return
         reading = self._reading(detector.detect(frame))
         self.publish(self.face_topic, reading.model_dump())
-        self._emit_edges(reading.present)
+        self._emit_edges(reading)
 
     def _latest_frame(self) -> np.ndarray | None:
         msg = self.bus.topic(self.camera_topic).current()
@@ -92,18 +92,20 @@ class FaceNode(EventPublisherMixin, Node):
         if strongest is None or strongest.confidence < self.confidence_threshold:
             return FaceDetectMessage()
         nx, ny = strongest.nose
-        _, _, bw, bh = strongest.bbox
+        bx, by, bw, bh = strongest.bbox
         return FaceDetectMessage(
             present=True,
             x=2.0 * nx - 1.0,
             y=2.0 * ny - 1.0,
             size=bw * bh,
             confidence=strongest.confidence,
+            bbox=(bx, by, bw, bh),
         )
 
-    def _emit_edges(self, present: bool) -> None:
+    def _emit_edges(self, reading: FaceDetectMessage) -> None:
+        present = reading.present
         if present and not self._present:
-            self.publish_event(_FACE_DETECTED, _FACE_TYPE)
+            self.publish_event(f"Face detected at {reading.x}, {reading.y}: confidence {reading.confidence}", _FACE_TYPE)
         elif not present and self._present:
             self.publish_event(_FACE_LOST, _FACE_TYPE)
         self._present = present

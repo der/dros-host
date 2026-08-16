@@ -70,6 +70,7 @@ def main():
 #    AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
     EchoEyeNode(bus, topic="/marvin/eyes")
+    FaceNode(bus, camera_topic="/marvin/camera", face_topic="/marvin/face")
     bus.run()
 
 if __name__ == "__main__":
