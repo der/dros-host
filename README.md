@@ -9,12 +9,13 @@ Builds on DROS (Dave's ROS) which provides the event bus and framework.
 ```
 uv sync --all-extras --dev
 . .venv/bin/activate
-pip install -e ../dros
-pip install .
+# python -m ensurepip
+pip3 install -e ../dros
+pip3 install .
 
 # To use pywhispercpp GPU support via vulkan (assumes specific vulkan install)
 . ~/Tools/vulkan/1.4.341.1/setup-env.sh 
-GGML_VULKAN=1 pip install git+https://github.com/absadiki/pywhispercpp
+GGML_VULKAN=1 pip3 install git+https://github.com/absadiki/pywhispercpp
 ```
 
 ## Running
