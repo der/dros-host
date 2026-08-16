@@ -1,12 +1,10 @@
-import readline
+from dros import Bus, DrosLogger, Node, ServerTransport
 
 from dros_host.audio_base.asr_node import ASRNode
 from dros_host.audio_base.tts_node import TTSNode
-from dros_host.audio_base.player_node import AudioPlayerNode
-from dros import Bus, DrosLogger, Node, ServerTransport
 from dros_host.llm_support.llm_node import LLMNode
 from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
-from dros_host.messages.image import ImageMessage
+from dros_host.vision.face_node import FaceNode
 
 logger = DrosLogger("events")
 logger.setLevel("DEBUG")
@@ -65,6 +63,7 @@ def main():
 #    bus = Bus(transport=ServerTransport(port=5000))
     EventLogNode(bus)
     CameraNode(bus, topic="/marvin/camera")
+    FaceNode(bus)
     ASRNode(bus, topic="/audio_stream", output_topic="/text_stream", model_name="large-v3-turbo-q5_0")
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
