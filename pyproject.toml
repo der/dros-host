@@ -5,6 +5,7 @@ requires-python = "~=3.13.0"
 dependencies = [
     "python-socketio>=5",
     "werkzeug>=3",
+    "opencv-python",
     "pyaudio",
     "pydantic",
     "pydantic-ai",
