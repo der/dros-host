@@ -68,7 +68,7 @@ def main():
     ASRNode(bus, topic="/audio_stream", output_topic="/text_stream", model_name="large-v3-turbo-q5_0")
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
-    AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
+#    AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
     EchoEyeNode(bus, topic="/marvin/eyes")
     bus.run()
