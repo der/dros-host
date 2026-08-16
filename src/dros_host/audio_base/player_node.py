@@ -4,13 +4,13 @@ Ported to DROS. Subscribes to audio room and plays through
 default speaker using PyAudio.
 """
 
-import os
+
+from queue import Empty, Queue
 
 import numpy as np
 import pyaudio
-from queue import Empty, Queue
+from dros import Bus, DrosLogger, Node
 
-from dros import Bus, Node, DrosLogger
 from dros_host.messages.audio import AudioMessage
 
 logger = DrosLogger("player_node")

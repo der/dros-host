@@ -1,4 +1,5 @@
-from dros import Bus, Node, ClientTransport
+from dros import Bus, ClientTransport, Node
+
 
 class LoggerNode(Node):
     def __init__(self, bus):

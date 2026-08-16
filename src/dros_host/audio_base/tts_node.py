@@ -4,17 +4,14 @@ Ported to DROS. Subscribes to text_stream room and publishes
 synthesised audio chunks to speech_stream using pocket-tts in streaming mode.
 """
 
-import os
-import threading
-from queue import Empty, Queue
 
 import numpy as np
+from dros import Bus, DrosLogger, Node
 from pocket_tts import TTSModel
 from scipy.signal import resample_poly
 
-from dros import Bus, Node, DrosLogger
+from dros_host.messages.audio import AudioData, AudioInfo, AudioMessage
 from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
-from dros_host.messages.audio import AudioMessage, AudioData, AudioInfo
 
 logger = DrosLogger("tts_node")
 
@@ -39,7 +36,7 @@ class TTSNode(EventPublisherMixin, Node):
         self.tts_sample_rate = 24000
         self.output_sample_rate = 16000
         self.chunk_size = 1280  # 80ms at 16kHz
-        self.voice_state = None
+        self.voice_state: dict | None = None
         self.is_running = False
         self.stop = False
 
@@ -79,10 +76,14 @@ class TTSNode(EventPublisherMixin, Node):
 
     def _synthesize(self, text: str):
         """Chunked generation of audio messages from the TTS model."""
+        voice_state = self.voice_state
+        if voice_state is None:
+            logger.error("Voice state not loaded; skipping synthesis")
+            return
         chunk_index = 0
         self.is_running = True
         for audio_tensor in self.tts_model.generate_audio_stream(
-            self.voice_state, text
+            voice_state, text
         ):
             if self.stop:
                 chunk_samples = self.chunk_size

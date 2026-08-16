@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 
+
 class EyeMessage(BaseModel):
     """Message format for eye control commands."""
     open: bool = True

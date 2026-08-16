@@ -8,8 +8,6 @@ import re
 from datetime import datetime
 
 from dros import Bus, DrosLogger, Node
-from dros_host.messages.image import ImageMessage
-from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
 from pydantic_ai import Agent, BinaryContent, SystemPromptPart
 from pydantic_ai.messages import (
     ModelMessage,
@@ -21,6 +19,9 @@ from pydantic_ai.messages import (
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.profiles import ModelProfile
 from pydantic_ai.providers.ollama import OllamaProvider
+
+from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
+from dros_host.messages.image import ImageMessage
 
 logger = DrosLogger("llm_node")
 

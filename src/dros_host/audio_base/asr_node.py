@@ -4,20 +4,14 @@ Ported from ROS2 to socket.io. Subscribes to audio_stream room and publishes
 transcriptions to text_stream room using pywhispercpp.
 """
 
-import argparse
-import asyncio
-import contextlib
-import logging
-import os
 import threading
-import time
-from queue import Empty, Queue
 
 import numpy as np
-from dros import Bus, SourceNode, DrosLogger
-from dros_host.messages.audio import AudioMessage
-from dros_host.messages.events import EVENT_TOPIC, EventPublisherMixin
+from dros import Bus, DrosLogger, SourceNode
 from pywhispercpp.model import Model
+
+from dros_host.messages.audio import AudioMessage
+from dros_host.messages.events import EventPublisherMixin
 
 logger = DrosLogger("asr_node")
 

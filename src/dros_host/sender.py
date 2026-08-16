@@ -1,8 +1,9 @@
 import ast
 import re
-import readline
+import readline  # noqa: F401
 
 from dros import Bus, ClientTransport, SourceNode
+
 from dros_host.messages.events import EVENT_TOPIC
 
 
