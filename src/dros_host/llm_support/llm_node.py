@@ -158,6 +158,7 @@ class LLMNode(EventPublisherMixin, Node):
 
     def _stream_agent(self, text: str):
         self.is_running = True
+        self.publish_event("thinking start", "llm")
         self.stop = False
         buffer = ""
         try:
@@ -182,7 +183,7 @@ class LLMNode(EventPublisherMixin, Node):
             self._publish(buffer)
         finally:
             self.is_running = False
-            
+            self.publish_event("thinking end", "llm")
     # Legacy to review not used currently, keeping all of history for a run
     async def keep_recent_messages(self, messages: list[ModelMessage]) -> list[ModelMessage]:
         """

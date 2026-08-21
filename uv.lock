@@ -512,12 +512,22 @@ wheels = [
 ]
 
 [[package]]
+name = "dros"
+version = "0.1.0"
+source = { git = "ssh://git@github.com/der/dros#288c0f3d96c045f7cf4463383eea974aae388043" }
+dependencies = [
+    { name = "python-socketio" },
+    { name = "werkzeug" },
+]
+
+[[package]]
 name = "dros-host"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
     { name = "cbor2" },
+    { name = "dros" },
     { name = "lark" },
     { name = "librosa" },
     { name = "matplotlib" },
@@ -551,6 +561,7 @@ dev = [
 requires-dist = [
     { name = "accelerate" },
     { name = "cbor2" },
+    { name = "dros", git = "ssh://git@github.com/der/dros" },
     { name = "lark" },
     { name = "librosa" },
     { name = "matplotlib" },

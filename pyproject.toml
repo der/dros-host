@@ -24,6 +24,7 @@ dependencies = [
     "PyQt6",
     "ultralytics",
     "tf-keras",
+    "dros",
 ]
 
 [project.optional-dependencies]
@@ -53,3 +54,6 @@ ignore = ["E501"]
 
 [tool.pyright]
 typeCheckingMode = "standard"
+
+[tool.uv.sources]
+dros = { git = "ssh://git@github.com/der/dros" }

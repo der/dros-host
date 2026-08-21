@@ -82,6 +82,7 @@ class TTSNode(EventPublisherMixin, Node):
             return
         chunk_index = 0
         self.is_running = True
+        self.publish_event("synthesis start", event_type="tts")
         for audio_tensor in self.tts_model.generate_audio_stream(
             voice_state, text
         ):
@@ -118,4 +119,5 @@ class TTSNode(EventPublisherMixin, Node):
                 break
 
         self.is_running = False
+        self.publish_event("synthesis end", event_type="tts")
         logger.info(f"Synthesis complete: {chunk_index} chunks generated")

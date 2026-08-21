@@ -1,5 +1,5 @@
 from dros import Bus, DrosLogger, Node, ServerTransport
-
+from dros_host.brain.brain import BrainNode
 from dros_host.audio_base.asr_node import ASRNode
 from dros_host.audio_base.tts_node import TTSNode
 from dros_host.llm_support.llm_node import LLMNode
@@ -71,6 +71,8 @@ def main():
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
     EchoEyeNode(bus, topic="/marvin/eyes")
     FaceNode(bus, camera_topic="/marvin/camera", face_topic="/marvin/face")
+    BrainNode(bus)
+    print("DROS Host is running. Dashboard http://localhost:5000/dashboard. Press Ctrl+C to exit.")
     bus.run()
 
 if __name__ == "__main__":
