@@ -182,6 +182,44 @@
   .neck-val span:first-child { color: var(--muted); }
   .neck-val span:last-child { font-weight: 700; }
 
+  /* Brain mode */
+  .bm-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 4px 0;
+  }
+  .bm-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 20px;
+    font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background 0.4s, color 0.4s;
+  }
+  .bm-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  .bm-dot.asleep  { background: #95a5a6; }
+  .bm-dot.idle    { background: #3498db; }
+  .bm-dot.listening { background: var(--accent); animation: bm-pulse 1.5s infinite; }
+  .bm-dot.thinking  { background: var(--orange); animation: bm-spin 1s linear infinite; }
+  .bm-dot.speaking  { background: var(--warn); }
+  .bm-dot.working   { background: #9b59b6; animation: bm-pulse 1s infinite; }
+
+  .bm-chip.asleep  { background: #ecf0f1; color: #7f8c8d; }
+  .bm-chip.idle    { background: #dbeafe; color: #1e40af; }
+  .bm-chip.listening { background: #d1fae5; color: #047857; }
+  .bm-chip.thinking  { background: #fff7ed; color: #9a3412; }
+  .bm-chip.speaking  { background: #fef2f2; color: #991b1b; }
+  .bm-chip.working   { background: #f5f3ff; color: #5b21b6; }
+
+  @keyframes bm-pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  @keyframes bm-spin { 0%{transform:rotate(0deg)}100%{transform:rotate(360deg)} }
+
+  .bm-time {
+    font-size: 0.65rem; color: var(--muted);
+  }
+
   /* No-data placeholder within widget */
   .placeholder { color: var(--muted); font-style: italic; font-size: 0.8rem; }
 
@@ -237,6 +275,24 @@
   </div>
 
   <div class="right-col">
+    <div class="card">
+      <div class="card-header">Brain Mode</div>
+      <template x-if="hasBrainMode">
+        <div class="bm-wrap">
+          <div class="bm-chip" :class="brainMode">
+            <span class="bm-dot" :class="brainMode"></span>
+            <span x-text="brainMode"></span>
+          </div>
+          <span class="bm-time"
+            x-text="brainModeAt ? 'since ' + (new Date(brainModeAt)).toLocaleTimeString() : ''">
+          </span>
+        </div>
+      </template>
+      <template x-if="!hasBrainMode">
+        <div class="sensor-placeholder"><span class="placeholder">Waiting for brain mode...</span></div>
+      </template>
+    </div>
+
     <div class="card">
       <div class="card-header">Heading &amp; Distance</div>
       <template x-if="hasDist">
@@ -342,6 +398,9 @@ function dashboard() {
     neckPan: 0,
     neckTilt: 0,
     hasNeck: false,
+    brainMode: "asleep",
+    brainModeAt: null,
+    hasBrainMode: false,
     socket: null,
     reconnectAttempts: 0,
 
@@ -391,6 +450,11 @@ function dashboard() {
       const evtType = msg.type || 'generic';
       const evtMsg = msg.message || '';
       this.events.push({ id: ++eventId, type: evtType, message: evtMsg });
+      if (evtType === 'brain_mode') {
+        this.hasBrainMode = true;
+        this.brainMode = evtMsg;
+        this.brainModeAt = Date.now();
+      }
       this.$nextTick(() => {
         const log = this.$refs.eventLog;
         if (log) { log.scrollTop = log.scrollHeight; }
@@ -443,7 +507,7 @@ function dashboard() {
         sock.emit('subscribe', '/events');
         sock.emit('subscribe', '/marvin/dist_heading');
         sock.emit('subscribe', '/marvin/eyes');
-        sock.emit('subscribe', '/marvin/neck');
+        sock.emit('subscribe', '/marvin/neck_position');
       });
 
       sock.on('disconnect', () => {

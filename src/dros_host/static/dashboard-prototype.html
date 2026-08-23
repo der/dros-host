@@ -3,581 +3,402 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Prototype</title>
+<title>PROTOTYPE — Brain Mode Card Variants</title>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 <style>
+  /* ——— copied dashboard styles (minimal, for context) ——— */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1a2e;
-    --card: #16213e;
-    --card2: #0f3460;
-    --text: #e0e0e0;
-    --muted: #8892b0;
-    --accent: #00d4aa;
-    --warn: #ff6b6b;
-    --orange: #ffa726;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #6b7b8d;
+    --accent: #00a86b;
+    --warn: #e74c3c;
+    --orange: #e67e22;
+    --border: #dce1e8;
+    --blue: #3498db;
+    --purple: #9b59b6;
+    --teal: #1abc9c;
   }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
+    font-size: 16px;
     min-height: 100vh;
-    padding-bottom: 52px;
   }
 
-  /* Shared widgets */
   .card {
     background: var(--card);
     border-radius: 10px;
     padding: 14px;
+    border: 1px solid var(--border);
     overflow: hidden;
+    position: relative;
   }
   .card-header {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
     margin-bottom: 8px;
-  }
-
-  /* Variant switcher */
-  .switcher {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #e94560;
-    color: white;
-    border-radius: 10px 10px 0 0;
-    padding: 6px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 0.85rem;
     font-weight: 600;
-    z-index: 9999;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
   }
-  .switcher button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 2px 8px;
-    border-radius: 4px;
-  }
-  .switcher button:hover { background: rgba(255,255,255,0.2); }
 
-  /* -- Variant A: Dashboard Grid -- */
-  .vA-grid {
+  /* ——— dashboard shell ——— */
+  .grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    gap: 10px;
-    padding: 12px;
-    height: calc(100vh - 52px);
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+    padding: 14px;
+    max-width: 1100px;
+    margin: 0 auto;
   }
-  .vA-camera { grid-column: 1 / -1; background: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; min-height: 180px; }
-  .vA-camera img { max-width: 100%; max-height: 200px; border-radius: 8px; }
-  .vA-camera .placeholder { color: var(--muted); font-size: 0.8rem; }
-  .vA-events { grid-column: 1; grid-row: 2 / 5; }
-  .vA-right { grid-column: 2; display: flex; flex-direction: column; gap: 10px; }
+  .events-panel { grid-column: 1; grid-row: 1 / 4; display: flex; flex-direction: column; }
+  .right-col { grid-column: 2; display: flex; flex-direction: column; gap: 12px; }
 
-  .event-log { overflow-y: auto; max-height: 240px; font-size: 0.78rem; }
-  .event-log::-webkit-scrollbar { width: 4px; }
-  .event-log::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
-  .event-item { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .event-item .type { font-weight: 600; font-size: 0.65rem; text-transform: uppercase; }
-  .event-item .type.asr { color: var(--accent); }
-  .event-item .type.llm { color: var(--orange); }
+  .event-log {
+    flex: 1; min-height: 300px; overflow-y: auto; font-size: 0.85rem;
+  }
+  .event-item {
+    padding: 4px 0; border-bottom: 1px solid var(--border);
+    display: flex; gap: 6px; align-items: baseline;
+  }
+  .event-type {
+    font-weight: 700; font-size: 0.65rem; text-transform: uppercase;
+    flex-shrink: 0; min-width: 50px;
+  }
+  .event-type.brain_mode { color: var(--purple); }
+  .event-msg { line-height: 1.4; }
 
-  .heading-compass { display: flex; align-items: center; gap: 10px; }
-  .compass-rose {
-    width: 80px; height: 80px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.15);
-    position: relative;
+  /* ——— prototype controls ——— */
+  .proto-controls {
+    display: flex; gap: 8px; align-items: center; padding: 10px 14px;
+    background: var(--card); border-bottom: 1px solid var(--border);
   }
-  .compass-needle {
-    position: absolute; top: 50%; left: 50%;
-    width: 2px; height: 34px; background: var(--warn);
-    transform-origin: bottom center;
+  .proto-controls button {
+    padding: 4px 10px; font-size: 0.75rem; border: 1px solid var(--border);
+    background: var(--card); border-radius: 4px; cursor: pointer;
   }
-  .compass-label {
-    position: absolute;
-    font-size: 0.55rem; color: var(--muted);
+  .proto-controls button:active { background: var(--border); }
+  .proto-label {
+    font-size: 0.75rem; color: var(--muted); margin-right: auto;
   }
-  .compass-label.n { top: 2px; left: 50%; transform: translateX(-50%); }
-  .compass-label.e { right: 2px; top: 50%; transform: translateY(-50%); }
-  .compass-label.s { bottom: 2px; left: 50%; transform: translateX(-50%); }
-  .compass-label.w { left: 2px; top: 50%; transform: translateY(-50%); }
+  .proto-label strong { color: var(--text); }
 
-  .dist-bars { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
-  .dist-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .dist-bar-label { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; }
-  .dist-bar { width: 24px; height: 60px; background: var(--card2); border-radius: 4px; position: relative; overflow: hidden; }
-  .dist-bar-fill { position: absolute; bottom: 0; width: 100%; border-radius: 4px; }
+  /* ——— floating variant switcher ——— */
+  .variant-bar {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 12px;
+    background: #1a1a2e; color: #fff;
+    padding: 8px 20px; border-radius: 24px;
+    font-size: 0.8rem; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    z-index: 1000;
+    user-select: none;
+  }
+  .variant-bar button {
+    background: none; border: none; color: #fff; font-size: 1.1rem;
+    cursor: pointer; padding: 2px 8px; border-radius: 6px;
+    line-height: 1;
+  }
+  .variant-bar button:hover { background: rgba(255,255,255,0.15); }
+  .variant-label { min-width: 160px; text-align: center; }
 
-  .eye-display { display: flex; align-items: center; gap: 16px; }
-  .eye-left, .eye-right {
-    width: 40px; height: 28px; border-radius: 50%;
-    border: 2px solid var(--accent);
-    position: relative;
-    transition: background 0.3s, transform 0.2s;
+  /* ================================
+     VARIANT A — status chip
+     ================================ */
+  .vA-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 4px 0;
   }
-  .eye-pupil {
-    position: absolute; width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    top: 50%; transform: translate(-50%, -50%);
-    transition: left 0.3s;
+  .vA-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 20px;
+    font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background 0.4s, color 0.4s;
+  }
+  .vA-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  .vA-dot.asleep  { background: #95a5a6; }
+  .vA-dot.idle    { background: var(--blue); }
+  .vA-dot.listening { background: var(--accent); animation: vA-pulse 1.5s infinite; }
+  .vA-dot.thinking  { background: var(--orange); animation: vA-spin 1s linear infinite; }
+  .vA-dot.speaking  { background: var(--warn); }
+  .vA-dot.working   { background: var(--purple); animation: vA-pulse 1s infinite; }
+
+  .vA-chip.asleep  { background: #ecf0f1; color: #7f8c8d; }
+  .vA-chip.idle    { background: #dbeafe; color: #1e40af; }
+  .vA-chip.listening { background: #d1fae5; color: #047857; }
+  .vA-chip.thinking  { background: #fff7ed; color: #9a3412; }
+  .vA-chip.speaking  { background: #fef2f2; color: #991b1b; }
+  .vA-chip.working   { background: #f5f3ff; color: #5b21b6; }
+
+  @keyframes vA-pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  @keyframes vA-spin { 0%{transform:rotate(0deg)}100%{transform:rotate(360deg)} }
+
+  .vA-time {
+    font-size: 0.65rem; color: var(--muted);
   }
 
-  .neck-display { display: flex; gap: 10px; font-size: 0.75rem; }
-  .neck-slider { display: flex; align-items: center; gap: 6px; }
-  .neck-slider track {
-    width: 60px; height: 4px; background: var(--card2); border-radius: 2px;
-    position: relative; display: block;
+  /* ================================
+     VARIANT B — state flow diagram
+     ================================ */
+  .vB-flow {
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 0.72rem;
+    padding: 4px 0;
   }
-  .neck-slider track::after {
-    content: '';
-    position: absolute; top: -3px;
-    width: 10px; height: 10px; background: var(--accent);
-    border-radius: 50%;
+  .vB-row {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .vB-arrow {
+    color: var(--muted); font-size: 0.65rem; flex-shrink: 0;
+  }
+  .vB-node {
+    padding: 3px 10px; border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .vB-node.active {
+    border-color: var(--purple);
+    background: #f5f3ff;
+    color: #5b21b6;
+    font-size: 0.8rem;
+    padding: 4px 14px;
+    box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.15);
   }
 
-  /* -- Variant B: Chat Feed -- */
-  .vB-wrap {
-    max-width: 640px; margin: 0 auto; padding: 12px;
-    display: flex; flex-direction: column;
-    height: calc(100vh - 52px);
-  }
-  .vB-camera {
-    display: flex; gap: 8px; align-items: center;
-    background: var(--card); border-radius: 10px;
-    padding: 8px 14px; margin-bottom: 10px;
-  }
-  .vB-camera img { max-height: 80px; border-radius: 6px; }
-  .vB-feed { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; }
-  .vB-feed::-webkit-scrollbar { width: 4px; }
-  .vB-feed::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
-  .vB-bubble {
-    max-width: 80%; padding: 8px 12px; border-radius: 12px;
-    margin-bottom: 6px; font-size: 0.82rem; line-height: 1.4;
-  }
-  .vB-bubble.asr { align-self: flex-end; background: var(--card2); }
-  .vB-bubble.llm { align-self: flex-start; background: var(--card); border: 1px solid var(--orange); }
-  .vB-sensors { display: flex; gap: 8px; margin-top: 8px; font-size: 0.7rem; }
-  .vB-sensors .card { flex: 1; min-width: 0; }
-  .vB-sensor-val { font-size: 1.1rem; font-weight: 600; color: var(--accent); }
-
-  /* -- Variant C: Robot Avatar -- */
+  /* ================================
+     VARIANT C — animated mood ring
+     ================================ */
   .vC-wrap {
-    display: flex; height: calc(100vh - 52px);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 8px 0 4px;
   }
-  .vC-sidebar {
-    width: 200px; background: var(--card);
-    padding: 10px; display: flex; flex-direction: column;
-    border-right: 1px solid rgba(255,255,255,0.05);
-  }
-  .vC-sidebar .event-log { flex: 1; max-height: none; }
-  .vC-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .vC-robot {
-    width: 220px; height: 220px; border: 3px solid var(--card2);
-    border-radius: 50%; position: relative;
+  .vC-ring {
+    width: 90px; height: 90px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-  }
-  .vC-robot-face { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .vC-eyes { display: flex; gap: 24px; }
-  .vC-eye {
-    width: 36px; height: 22px; border-radius: 50%;
-    border: 2px solid var(--accent);
+    font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #fff;
+    transition: background 0.6s, box-shadow 0.6s, transform 0.3s;
     position: relative;
   }
-  .vC-eye.wide { width: 48px; height: 28px; }
-  .vC-eye.closed { height: 3px; width: 36px; border-radius: 2px; margin-top: 10px; }
-  .vC-pupil { position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; top: 50%; transform: translate(-50%, -50%); }
-  .vC-mouth { width: 20px; height: 3px; border-radius: 2px; background: var(--accent); }
-  .vC-dist-arc {
-    position: absolute; inset: -30px; pointer-events: none;
-  }
-  .vC-camera-pip {
-    position: absolute; bottom: 10px; right: 0;
-    width: 140px; background: #000; border: 1px solid var(--card2);
-    border-radius: 8px; overflow: hidden;
-  }
-  .vC-info { margin-top: 14px; display: flex; gap: 20px; font-size: 0.75rem; color: var(--muted); }
-  .vC-info strong { color: var(--accent); }
+  .vC-ring.asleep  { background: #95a5a6; box-shadow: 0 0 0 0 rgba(149,165,166,0); transform: scale(0.9); }
+  .vC-ring.idle    { background: var(--blue); box-shadow: 0 0 12px 2px rgba(52,152,219,0.3); }
+  .vC-ring.listening { background: #22c55e; box-shadow: 0 0 24px 6px rgba(34,197,94,0.35); animation: vC-breathe 2s ease-in-out infinite; }
+  .vC-ring.thinking  { background: var(--orange); box-shadow: 0 0 20px 4px rgba(230,126,34,0.4); animation: vC-think 0.8s ease-in-out infinite; }
+  .vC-ring.speaking  { background: var(--warn); box-shadow: 0 0 28px 8px rgba(231,76,60,0.4); animation: vC-speak 0.3s ease-in-out infinite; }
+  .vC-ring.working   { background: var(--purple); box-shadow: 0 0 20px 4px rgba(155,89,182,0.4); animation: vC-work 1.5s ease-in-out infinite; }
 
-  /* -- Empty state -- */
-  .empty { color: var(--muted); font-style: italic; font-size: 0.75rem; }
+  @keyframes vC-breathe { 0%,100%{transform:scale(1)}50%{transform:scale(1.08)} }
+  @keyframes vC-think { 0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.05) rotate(3deg)} }
+  @keyframes vC-speak { 0%,100%{box-shadow:0 0 14px 2px rgba(231,76,60,0.4)}50%{box-shadow:0 0 36px 12px rgba(231,76,60,0.6);transform:scale(1.04)} }
+  @keyframes vC-work { 0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.06);filter:brightness(1.15)} }
+
+  .vC-time {
+    font-size: 0.65rem; color: var(--muted);
+  }
 </style>
 </head>
-<body x-data="dashboard()" x-init="init()">
+<body x-data="prototype()" x-init="init()">
 
-<!-- ================== VARIANT A ================== -->
-<template x-if="variant === 'A'">
-<div class="vA-grid">
+<!-- ——— prototype controls (cycle modes manually + auto mode) ——— -->
+<div class="proto-controls">
+  <span class="proto-label">Simulated brain mode: <strong x-text="simMode"></strong></span>
+  <button @click="prevMode">◀ Prev</button>
+  <button @click="nextMode">Next ▶</button>
+  <button @click="autoCycle = !autoCycle" :style="autoCycle ? 'background:#dbeafe' : ''" x-text="autoCycle ? 'Auto: ON' : 'Auto: OFF'"></button>
+  <span style="font-size:0.65rem;color:var(--muted)" x-text="'Changes: ' + changeCount"></span>
+</div>
 
-  <div class="vA-camera">
-    <template x-if="cameraHasData">
-      <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera">
-    </template>
-    <template x-if="!cameraHasData">
-      <span class="placeholder">Camera — no image yet</span>
-    </template>
-  </div>
-
-  <div class="vA-events card">
-    <div class="card-header">Events</div>
-    <div class="event-log" x-ref="eventLogA">
-      <template x-for="evt in events" :key="evt.id">
+<!-- ——— dashboard grid (right-col only — brain mode card) ——— -->
+<div class="grid">
+  <div class="events-panel card">
+    <div class="card-header">Events Log</div>
+    <div class="event-log" x-ref="evtLog">
+      <template x-for="e in events" :key="e.id">
         <div class="event-item">
-          <span class="type" :class="evt.type === 'asr' ? 'asr' : 'llm'" x-text="evt.type"></span>
-          <span x-text="evt.message"></span>
+          <span class="event-type" :class="e.type" x-text="e.type"></span>
+          <span class="event-msg" x-text="e.msg"></span>
         </div>
       </template>
       <template x-if="events.length === 0">
-        <div class="empty">Waiting for events...</div>
+        <div style="color:var(--muted);font-style:italic;padding:20px;text-align:center">No events yet</div>
       </template>
     </div>
   </div>
 
-  <div class="vA-right">
+  <div class="right-col">
+    <!-- === BRAIN MODE CARD === -->
+    <div class="card">
+      <div class="card-header">Brain Mode</div>
+
+      <!-- Variant A: status chip -->
+      <template x-if="variant === 'A'">
+        <div class="vA-wrap">
+          <div class="vA-chip" :class="brainMode">
+            <span class="vA-dot" :class="brainMode"></span>
+            <span x-text="brainMode"></span>
+          </div>
+          <span class="vA-time"
+            x-text="lastChange ? 'since ' + (new Date(lastChange)).toLocaleTimeString() : ''">
+          </span>
+        </div>
+      </template>
+
+      <!-- Variant B: state flow diagram -->
+      <template x-if="variant === 'B'">
+        <div class="vB-flow">
+          <div class="vB-row">
+            <span class="vB-node" :class="{active: brainMode === 'asleep'}">asleep</span>
+            <span class="vB-arrow">→</span>
+            <span class="vB-node" :class="{active: brainMode === 'idle'}">idle</span>
+            <span class="vB-arrow">→</span>
+            <span class="vB-node" :class="{active: brainMode === 'listening'}">listening</span>
+          </div>
+          <div class="vB-row">
+            <span class="vB-node" :class="{active: brainMode === 'working'}">working</span>
+            <span class="vB-arrow">←</span>
+            <span class="vB-node" :class="{active: brainMode === 'speaking'}">speaking</span>
+            <span class="vB-arrow">←</span>
+            <span class="vB-node" :class="{active: brainMode === 'thinking'}">thinking</span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Variant C: animated mood ring -->
+      <template x-if="variant === 'C'">
+        <div class="vC-wrap">
+          <div class="vC-ring" :class="brainMode" x-text="brainMode"></div>
+          <span class="vC-time"
+            x-text="lastChange ? 'since ' + (new Date(lastChange)).toLocaleTimeString() : ''">
+          </span>
+        </div>
+      </template>
+    </div>
+
+    <!-- placeholder cards for context -->
     <div class="card">
       <div class="card-header">Heading &amp; Distance</div>
-      <div class="heading-compass">
-        <div class="compass-rose">
-          <span class="compass-label n">N</span>
-          <span class="compass-label e">E</span>
-          <span class="compass-label s">S</span>
-          <span class="compass-label w">W</span>
-          <div class="compass-needle" :style="'transform: translate(-50%, -100%) rotate(' + headingDeg + 'deg)'"></div>
-        </div>
-        <div>
-          <div style="font-size:1rem;font-weight:700;" x-text="heading + '°'"></div>
-          <div class="muted" style="font-size:0.65rem">raw: <span x-text="headingRaw"></span></div>
-        </div>
-      </div>
-      <div class="dist-bars">
-        <div class="dist-bar-wrap">
-          <span class="dist-bar-label">L</span>
-          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[0] + '%; background:' + distColor(dist[0])"></div></div>
-          <span style="font-size:0.6rem" x-text="distLabel(dist[0])"></span>
-        </div>
-        <div class="dist-bar-wrap">
-          <span class="dist-bar-label">C</span>
-          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[1] + '%; background:' + distColor(dist[1])"></div></div>
-          <span style="font-size:0.6rem" x-text="distLabel(dist[1])"></span>
-        </div>
-        <div class="dist-bar-wrap">
-          <span class="dist-bar-label">R</span>
-          <div class="dist-bar"><div class="dist-bar-fill" :style="'height:' + distPct[2] + '%; background:' + distColor(dist[2])"></div></div>
-          <span style="font-size:0.6rem" x-text="distLabel(dist[2])"></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">Eyes</div>
-      <div class="eye-display">
-        <div class="eye-left" :class="{'closed': !eyesOpen}" :style="!eyesOpen ? 'background:transparent;border-color:var(--muted)' : (eyesWide ? 'transform:scaleX(1.3)' : '')">
-          <template x-if="eyesOpen">
-            <div class="eye-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
-          </template>
-        </div>
-        <div class="eye-right" :class="{'closed': !eyesOpen}" :style="!eyesOpen ? 'background:transparent;border-color:var(--muted)' : (eyesWide ? 'transform:scaleX(1.3)' : '')">
-          <template x-if="eyesOpen">
-            <div class="eye-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
-          </template>
-        </div>
-        <div style="font-size:0.7rem;color:var(--muted)">
-          <div x-text="eyesOpen ? (eyesWide ? 'Wide open' : 'Open') : 'Closed'"></div>
-          <div x-text="'x: ' + eyesX.toFixed(2)"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">Neck</div>
-      <div class="neck-display">
-        <div class="neck-slider">
-          <span>Pan</span>
-          <span x-text="neckPan + '°'"></span>
-        </div>
-        <div class="neck-slider">
-          <span>Tilt</span>
-          <span x-text="neckTilt + '°'"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-</template>
-
-<!-- ================== VARIANT B ================== -->
-<template x-if="variant === 'B'">
-<div class="vB-wrap">
-
-  <div class="vB-camera">
-    <template x-if="cameraHasData">
-      <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera" style="flex-shrink:0">
-    </template>
-    <template x-if="!cameraHasData">
-      <span class="empty" style="width:80px;text-align:center">No image</span>
-    </template>
-    <div style="flex:1">
-      <div style="font-size:0.65rem;color:var(--muted)">CAMERA</div>
-      <div style="font-size:0.75rem" x-text="cameraHasData ? 'Live (last frame 0.3s ago)' : 'Waiting...'"></div>
-    </div>
-  </div>
-
-  <div class="vB-feed" x-ref="eventLogB">
-    <template x-for="evt in events" :key="evt.id">
-      <div class="vB-bubble" :class="evt.type">
-        <div style="font-size:0.6rem;opacity:0.6;text-transform:uppercase;margin-bottom:2px" x-text="evt.type === 'asr' ? 'You said' : 'Marvin'"></div>
-        <span x-text="evt.message"></span>
-      </div>
-    </template>
-    <template x-if="events.length === 0">
-      <div class="empty" style="text-align:center;padding:40px 0">Listening...</div>
-    </template>
-  </div>
-
-  <div class="vB-sensors">
-    <div class="card">
-      <div class="card-header">Heading</div>
-      <div class="vB-sensor-val" x-text="heading + '°'"></div>
-    </div>
-    <div class="card">
-      <div class="card-header">Distance</div>
-      <div class="vB-sensor-val" x-text="dist[1] + 'cm'"></div>
-      <div style="font-size:0.6rem;color:var(--muted)">L<span x-text="dist[0]"></span> / R<span x-text="dist[2]"></span></div>
+      <div style="padding:10px;color:var(--muted);font-size:0.8rem;text-align:center">(other cards)</div>
     </div>
     <div class="card">
       <div class="card-header">Eyes</div>
-      <div class="vB-sensor-val" x-text="eyesOpen ? (eyesWide ? 'Wide' : 'Open') : 'Closed'"></div>
+      <div style="padding:10px;color:var(--muted);font-size:0.8rem;text-align:center">(other cards)</div>
     </div>
     <div class="card">
       <div class="card-header">Neck</div>
-      <div class="vB-sensor-val" x-text="neckPan + '°/' + neckTilt + '°'"></div>
+      <div style="padding:10px;color:var(--muted);font-size:0.8rem;text-align:center">(other cards)</div>
     </div>
   </div>
-
 </div>
-</template>
 
-<!-- ================== VARIANT C ================== -->
-<template x-if="variant === 'C'">
-<div class="vC-wrap">
-
-  <div class="vC-sidebar">
-    <div class="card-header" style="margin-bottom:8px">Events</div>
-    <div class="event-log" x-ref="eventLogC">
-      <template x-for="evt in events" :key="evt.id">
-        <div class="event-item">
-          <span class="type" :class="evt.type === 'asr' ? 'asr' : 'llm'" x-text="evt.type"></span>
-          <span x-text="evt.message"></span>
-        </div>
-      </template>
-      <template x-if="events.length === 0">
-        <div class="empty">Waiting...</div>
-      </template>
-    </div>
-  </div>
-
-  <div class="vC-center">
-    <div class="vC-robot">
-      <!-- distance arcs -->
-      <svg class="vC-dist-arc" viewBox="0 0 280 280">
-        <template x-for="(d, i) in dist" :key="i">
-          <path :d="distArcPath(i, d)" :stroke="distColor(d)" stroke-width="2" fill="none" opacity="0.6"/>
-        </template>
-        <text x="140" y="18" text-anchor="middle" fill="var(--muted)" font-size="8">N</text>
-        <text x="140" y="274" text-anchor="middle" fill="var(--muted)" font-size="8">S</text>
-        <!-- heading pointer at top-edge of arc -->
-        <line :x1="140" :y1="140" :x2="headingX(140, 40)" :y2="headingY(140, 40)" stroke="var(--warn)" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-
-      <div class="vC-robot-face">
-        <div class="vC-eyes">
-          <div :class="'vC-eye' + (eyesWide ? ' wide' : '') + (!eyesOpen ? ' closed' : '')">
-            <template x-if="eyesOpen">
-              <div class="vC-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
-            </template>
-          </div>
-          <div :class="'vC-eye' + (eyesWide ? ' wide' : '') + (!eyesOpen ? ' closed' : '')">
-            <template x-if="eyesOpen">
-              <div class="vC-pupil" :style="'left:' + (50 + eyesX * 20) + '%'"></div>
-            </template>
-          </div>
-        </div>
-        <div class="vC-mouth"></div>
-      </div>
-
-      <div class="vC-camera-pip">
-        <template x-if="cameraHasData">
-          <img :src="'data:image/jpeg;base64,' + cameraData" alt="Camera" style="width:100%">
-        </template>
-        <template x-if="!cameraHasData">
-          <div style="height:70px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.7rem">No camera</div>
-        </template>
-      </div>
-    </div>
-
-    <div class="vC-info">
-      <span>Dist: <strong x-text="dist[1] + 'cm'"></strong></span>
-      <span>Neck: <strong x-text="neckPan + '/' + neckTilt + '°'"></strong></span>
-    </div>
-  </div>
-
-</div>
-</template>
-
-<!-- ================== SWITCHER ================== -->
-<div class="switcher">
-  <button @click="prevVariant" aria-label="Previous variant">&larr;</button>
-  <span x-text="'Variant ' + variant + ' — ' + variantNames[variant]"></span>
-  <button @click="nextVariant" aria-label="Next variant">&rarr;</button>
+<!-- ——— floating variant switcher ——— -->
+<div class="variant-bar">
+  <button @click="cycleVariant(-1)" aria-label="Previous variant">◀</button>
+  <span class="variant-label">
+    Variant <span x-text="variant"></span>
+    <template x-if="variant === 'A'"> — Status chip</template>
+    <template x-if="variant === 'B'"> — Flow diagram</template>
+    <template x-if="variant === 'C'"> — Mood ring</template>
+  </span>
+  <button @click="cycleVariant(1)" aria-label="Next variant">▶</button>
 </div>
 
 <script>
-function dashboard() {
-  // --- Sample data ---
-  const sampleEvents = [
-    { id: 8, type: 'asr', message: 'What do you see in front of you?' },
-    { id: 7, type: 'llm', message: 'I can see a person standing about two meters ahead, slightly to my right.' },
-    { id: 6, type: 'asr', message: 'Turn around and look for obstacles.' },
-    { id: 5, type: 'llm', message: 'I am turning to face south. The path ahead looks clear for at least three meters.' },
-    { id: 4, type: 'asr', message: 'What is the temperature in the room?' },
-    { id: 3, type: 'llm', message: 'I don\'t have a thermometer but the room feels comfortable, roughly 21 degrees.' },
-    { id: 2, type: 'asr', message: 'Move forward slowly.' },
-    { id: 1, type: 'llm', message: 'Moving forward at low speed. I am monitoring the distance sensors.' },
-  ];
+  const MODES = ["asleep", "idle", "listening", "thinking", "speaking", "working"];
+  const VARIANTS = ["A", "B", "C"];
 
-  const sampleEyes = { open: true, wide: false, x: -0.15 };
-  const sampleNeck = { pan: 75.0, tilt: 45.0, speed: 5 };
-  const sampleDistHeading = { heading: 127, dist: [120, 250, 78], pitch: 0 };
+  function prototype() {
+    return {
+      brainMode: "asleep",
+      lastChange: null,
+      changeCount: 0,
+      simMode: "asleep",
+      autoCycle: true,
+      events: [],
+      variant: "A",
 
-  // --- State ---
-  const params = new URLSearchParams(window.location.search);
-  const initialVariant = params.get('variant') || 'A';
+      init() {
+        const p = new URLSearchParams(window.location.search);
+        const v = p.get("variant");
+        if (v && VARIANTS.includes(v.toUpperCase())) {
+          this.variant = v.toUpperCase();
+        }
 
-  return {
-    variant: initialVariant,
-    variantNames: {
-      A: 'Dashboard Grid', B: 'Chat Feed', C: 'Robot Avatar'
-    },
+        window.addEventListener("popstate", () => {
+          const p2 = new URLSearchParams(window.location.search);
+          const v2 = p2.get("variant");
+          if (v2 && VARIANTS.includes(v2.toUpperCase())) {
+            this.variant = v2.toUpperCase();
+          }
+        });
 
-    // live data
-    events: sampleEvents,
-    eyesOpen: sampleEyes.open,
-    eyesWide: sampleEyes.wide,
-    eyesX: sampleEyes.x,
-    neckPan: sampleNeck.pan,
-    neckTilt: sampleNeck.tilt,
-    headingRaw: sampleDistHeading.heading,
-    dist: sampleDistHeading.dist,
-    cameraData: null,
-    cameraHasData: false,
+        document.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.isContentEditable) return;
+          if (e.key === "ArrowLeft") this.cycleVariant(-1);
+          if (e.key === "ArrowRight") this.cycleVariant(1);
+        });
 
-    // --- Computed ---
-    get heading() {
-      return Math.round((this.headingRaw / 255) * 360);
-    },
-    get headingDeg() {
-      return this.heading;
-    },
-    get distPct() {
-      const max = 300; // cm reference for bar height
-      return this.dist.map(d => Math.min(100, (d / max) * 100));
-    },
+        this.fireEvent(this.brainMode);
+        this.lastChange = Date.now();
 
-    // --- Methods ---
-    distLabel(d) { return d + 'cm'; },
-    distColor(d) {
-      if (d < 60) return 'var(--warn)';
-      if (d < 120) return 'var(--orange)';
-      return 'var(--accent)';
-    },
+        setInterval(() => {
+          if (!this.autoCycle) return;
+          this.nextMode();
+        }, 2500);
+      },
 
-    // Variant C: arc paths
-    distArcPath(i, d) {
-      const cx = 140, cy = 140;
-      const maxR = 130, minR = 90;
-      const r = minR + (d / 300) * (maxR - minR);
-      // 3 arcs: left (S→W), centre (SE→SW), right (E→S)... actually let's do front 180°
-      // i=0 left sweep: 90 to 135, i=1 centre: 45 to 135, i=2 right: 45 to 90
-      // But arcs are independent per sensor; draw small arcs at different positions
-      const arcs = [
-        { start: 200, end: 250 },  // left
-        { start: 175, end: 185 },  // centre
-        { start: 110, end: 160 },  // right
-      ];
-      const a = arcs[i] || arcs[1];
-      const s = a.start * Math.PI / 180;
-      const e = a.end * Math.PI / 180;
-      const x1 = cx + r * Math.cos(s);
-      const y1 = cy + r * Math.sin(s);
-      const x2 = cx + r * Math.cos(e);
-      const y2 = cy + r * Math.sin(e);
-      const sweep = e - s > Math.PI ? 1 : 0;
-      return `M ${x1} ${y1} A ${r} ${r} 0 0 ${sweep} ${x2} ${y2}`;
-    },
-    headingX(cx, len) {
-      const rad = (this.headingDeg - 90) * Math.PI / 180;
-      return cx + len * Math.cos(rad);
-    },
-    headingY(cy, len) {
-      const rad = (this.headingDeg - 90) * Math.PI / 180;
-      return cy + len * Math.sin(rad);
-    },
+      cycleVariant(dir) {
+        const idx = VARIANTS.indexOf(this.variant);
+        const next = VARIANTS[(idx + dir + VARIANTS.length) % VARIANTS.length];
+        this.variant = next;
+        const url = new URL(window.location);
+        url.searchParams.set("variant", next);
+        window.history.replaceState({}, "", url);
+      },
 
-    // --- Switcher ---
-    nextVariant() {
-      const keys = Object.keys(this.variantNames);
-      const idx = keys.indexOf(this.variant);
-      this.variant = keys[(idx + 1) % keys.length];
-      this.updateUrl();
-    },
-    prevVariant() {
-      const keys = Object.keys(this.variantNames);
-      const idx = keys.indexOf(this.variant);
-      this.variant = keys[(idx - 1 + keys.length) % keys.length];
-      this.updateUrl();
-    },
-    updateUrl() {
-      const url = new URL(window.location);
-      url.searchParams.set('variant', this.variant);
-      window.history.replaceState({}, '', url);
-    },
+      prevMode() {
+        const idx = MODES.indexOf(this.simMode);
+        this.simMode = MODES[(idx - 1 + MODES.length) % MODES.length];
+        this.applyMode();
+      },
 
-    // --- Init ---
-    init() {
-      window.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-        if (e.key === 'ArrowRight') { e.preventDefault(); this.nextVariant(); }
-        if (e.key === 'ArrowLeft')  { e.preventDefault(); this.prevVariant(); }
-      });
+      nextMode() {
+        const idx = MODES.indexOf(this.simMode);
+        this.simMode = MODES[(idx + 1) % MODES.length];
+        this.applyMode();
+      },
 
-      // Simulate a fake camera image (gray placeholder canvas)
-      const canvas = document.createElement('canvas');
-      canvas.width = 320; canvas.height = 180;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#222';
-      ctx.fillRect(0, 0, 320, 180);
-      ctx.fillStyle = '#444';
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('Sample camera frame', 160, 86);
-      ctx.strokeStyle = '#555';
-      ctx.strokeRect(10, 60, 300, 40);
-      this.cameraData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-      this.cameraHasData = true;
-    },
-  };
-}
+      applyMode() {
+        this.brainMode = this.simMode;
+        this.lastChange = Date.now();
+        this.changeCount++;
+        this.fireEvent(this.brainMode);
+      },
+
+      fireEvent(mode) {
+        this.events.push({
+          id: Date.now(),
+          type: "brain_mode",
+          msg: mode,
+        });
+        this.$nextTick(() => {
+          const log = this.$refs.evtLog;
+          if (log) log.scrollTop = log.scrollHeight;
+        });
+      },
+    };
+  }
 </script>
 </body>
 </html>

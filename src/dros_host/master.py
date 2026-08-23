@@ -1,7 +1,8 @@
 from dros import Bus, DrosLogger, Node, ServerTransport
-from dros_host.brain.brain import BrainNode
+
 from dros_host.audio_base.asr_node import ASRNode
 from dros_host.audio_base.tts_node import TTSNode
+from dros_host.brain.brain import BrainNode
 from dros_host.llm_support.llm_node import LLMNode
 from dros_host.messages.events import EVENT_TOPIC, EventMessage, EventPublisherMixin
 from dros_host.vision.face_node import FaceNode
@@ -63,14 +64,13 @@ def main():
 #    bus = Bus(transport=ServerTransport(port=5000))
     EventLogNode(bus)
     CameraNode(bus, topic="/marvin/camera")
-    FaceNode(bus)
     ASRNode(bus, topic="/audio_stream", output_topic="/text_stream", model_name="large-v3-turbo-q5_0")
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
 #    AudioPlayerNode(bus, topic="/speech_stream", device_index=-1)
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
     EchoEyeNode(bus, topic="/marvin/eyes")
-    FaceNode(bus, camera_topic="/marvin/camera", face_topic="/marvin/face")
+    FaceNode(bus, camera_topic="/marvin/camera")
     BrainNode(bus)
     print("DROS Host is running. Dashboard http://localhost:5000/dashboard. Press Ctrl+C to exit.")
     bus.run()

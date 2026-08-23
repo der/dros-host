@@ -14,3 +14,8 @@ class NeckControlMessage(BaseModel):
     pan: float = 0.0
     tilt: float = 0.0
     speed: int = 2000
+
+class NeckPositionMessage(BaseModel):
+    """Message format for neck position state."""
+    pan: float = 0.0
+    tilt: float = 0.0
