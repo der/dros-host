@@ -18,7 +18,7 @@ dependencies = [
     "accelerate",
     "librosa",
     "scipy",
-    "pywhispercpp",
+    #    "pywhispercpp",
     "transformers",
     "matplotlib",
     "PyQt6",
@@ -56,4 +56,4 @@ ignore = ["E501"]
 typeCheckingMode = "standard"
 
 [tool.uv.sources]
-dros = { git = "ssh://git@github.com/der/dros" }
+dros = { git = "https://github.com/der/dros.git" }

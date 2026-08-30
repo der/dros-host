@@ -8,7 +8,7 @@ from dros_host.messages.face import FaceDetectMessage
 from dros_host.messages.robot import EyeMessage, NeckControlMessage, NeckPositionMessage
 
 logger = DrosLogger("brain_node")
-logger.setLevel("DEBUG")
+# logger.setLevel("DEBUG")
 
 class BrainMode(Enum):
     ASLEEP = "asleep"
@@ -30,6 +30,7 @@ class BrainNode(EventPublisherMixin, Node):
         self,
         bus: Bus,
         tick_interval: float = 0.2,
+        enable_turn_to_face: bool = True,
     ):
         super().__init__(bus=bus, interval=tick_interval)
         self.user_speaking = False
@@ -39,6 +40,7 @@ class BrainNode(EventPublisherMixin, Node):
         self.mode = BrainMode.ASLEEP
         self.mode_change = time()
         self.tick_actions = []
+        self.enable_turn_to_face = enable_turn_to_face
 
     def startup(self) -> None:
         """Initialize the BrainNode."""
@@ -108,6 +110,8 @@ class BrainNode(EventPublisherMixin, Node):
         self._default_mode_transitions()
         if mode_was != self.mode:  # noqa: SIM102
             if self.mode == BrainMode.LISTENING and self._action_turn_to_face not in self.tick_actions:
+                if not self.enable_turn_to_face:
+                    return
                 logger.info("Starting turn to face")
                 self.tick_actions.append(self._action_turn_to_face)
         for action in self.tick_actions:
@@ -155,7 +159,7 @@ class BrainNode(EventPublisherMixin, Node):
                         self.publish(NECK_CONTROL_TOPIC, NeckControlMessage(pan=pan, tilt=tilt, speed=1200).model_dump())
                         return
             else:
-                logger.info("Lost face detection probably while moving, wait to reappear")
+                logger.debug("Lost face detection probably while moving, wait to reappear")
                 return
         logger.info("Exiting turn to face action")
         self.tick_actions.remove(self._action_turn_to_face)
