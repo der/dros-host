@@ -1,7 +1,7 @@
 from dros_host.audio_base.asr_base_node import ASRBaseNode
 from transformers import pipeline
 
-class ASRNematron(ASRBaseNode):
+class ASRNemotron(ASRBaseNode):
     def __init__(self, bus, topic="/audio_stream", output_topic="/text_stream", model="nvidia/nemotron-speech-streaming-en-0.6b"):
         super().__init__(bus, topic, output_topic)
         self.model = model
