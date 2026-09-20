@@ -66,11 +66,11 @@ def main():
     ASRNemotron(bus, topic="/audio_stream", output_topic="/text_stream", model="nvidia/nemotron-speech-streaming-en-0.6b")
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
-    AudioPlayerNode(bus, topic="/audio_stream", device_index=-1)
+    # AudioPlayerNode(bus, topic="/audio_stream", device_index=-1)
     DistanceSensorNode(bus, topic="/marvin/dist_heading")
     EchoEyeNode(bus, topic="/marvin/eyes")
     FaceNode(bus, camera_topic="/marvin/camera")
-    BrainNode(bus, enable_turn_to_face=False)
+    BrainNode(bus, enable_turn_to_face=True)
     print("DROS Host is running. Dashboard http://localhost:5000/dashboard. Press Ctrl+C to exit.")
     bus.run()
 
