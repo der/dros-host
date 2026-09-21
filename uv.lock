@@ -480,8 +480,8 @@ wheels = [
 
 [[package]]
 name = "dros"
-version = "0.2.0"
-source = { git = "https://github.com/der/dros.git#677ee63d5ef13a4a4de78f629fafa0855c8824ca" }
+version = "0.2.1"
+source = { git = "https://github.com/der/dros.git#a1b0ec8ff51872dd49660dd6fd94c6f4d768c93f" }
 dependencies = [
     { name = "python-socketio" },
     { name = "werkzeug" },
