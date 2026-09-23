@@ -27,7 +27,10 @@
     color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 16px;
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   /* Connection bar */
@@ -72,31 +75,30 @@
   .grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    grid-template-rows: auto auto 1fr auto;
     gap: 12px;
     padding: 14px;
-    min-height: calc(100vh - 30px);
+    flex: 1;
+    min-height: 0;
   }
-  .camera-panel { grid-column: 1 / -1; }
-  .events-panel { grid-column: 1; grid-row: 2 / 5; display: flex; flex-direction: column; }
-  .right-col { grid-column: 2; display: flex; flex-direction: column; gap: 12px; }
+  .events-panel { grid-column: 1; display: flex; flex-direction: column; min-height: 0; }
+  .right-col { grid-column: 2; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
 
   /* Camera */
   .camera-container {
-    background: #000; border-radius: 10px; min-height: 200px;
+    background: #000; border-radius: 10px; min-height: 140px;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; position: relative;
   }
   .camera-container img {
     display: block;
-    max-width: 100%; max-height: 512px; border-radius: 8px;
+    max-width: 100%; max-height: 240px; border-radius: 8px;
   }
   .camera-stage {
     position: relative;
     display: inline-block;
     line-height: 0;
     max-width: 100%;
-    max-height: 512px;
+    max-height: 240px;
   }
   .face-box {
     position: absolute;
@@ -235,30 +237,6 @@
 
 <div class="grid">
 
-  <div class="camera-panel card" style="padding:0;border:none">
-    <div class="camera-container" style="position:relative">
-      <template x-if="cameraError">
-        <div class="camera-error" x-text="cameraError"></div>
-      </template>
-      <template x-if="!cameraError && cameraData">
-        <div class="camera-stage">
-          <img :src="cameraData" alt="Camera">
-          <div class="face-box"
-               x-show="facePresent"
-               :style="'left:' + (faceBBox[0] * 100) + '%;top:' + (faceBBox[1] * 100) + '%;width:' + (faceBBox[2] * 100) + '%;height:' + (faceBBox[3] * 100) + '%'"></div>
-        </div>
-      </template>
-      <template x-if="!cameraError && !cameraData">
-        <div class="camera-placeholder">Camera — no image yet</div>
-      </template>
-      <div class="" x-show="!connected" style="position:absolute;inset:0;background:rgba(245,245,245,0.85);display:flex;align-items:center;justify-content:center;border-radius:10px;">
-        <template x-if="!connected">
-          <span style="color:var(--muted);font-size:0.8rem">Disconnected</span>
-        </template>
-      </div>
-    </div>
-  </div>
-
   <div class="events-panel card">
     <div class="card-header">Conversation</div>
     <div class="event-log" x-ref="eventLog">
@@ -275,6 +253,30 @@
   </div>
 
   <div class="right-col">
+    <div class="card" style="padding:0;border:none">
+      <div class="camera-container" style="position:relative">
+        <template x-if="cameraError">
+          <div class="camera-error" x-text="cameraError"></div>
+        </template>
+        <template x-if="!cameraError && cameraData">
+          <div class="camera-stage">
+            <img :src="cameraData" alt="Camera">
+            <div class="face-box"
+                 x-show="facePresent"
+                 :style="'left:' + (faceBBox[0] * 100) + '%;top:' + (faceBBox[1] * 100) + '%;width:' + (faceBBox[2] * 100) + '%;height:' + (faceBBox[3] * 100) + '%'"></div>
+          </div>
+        </template>
+        <template x-if="!cameraError && !cameraData">
+          <div class="camera-placeholder">Camera — no image yet</div>
+        </template>
+        <div class="" x-show="!connected" style="position:absolute;inset:0;background:rgba(245,245,245,0.85);display:flex;align-items:center;justify-content:center;border-radius:10px;">
+          <template x-if="!connected">
+            <span style="color:var(--muted);font-size:0.8rem">Disconnected</span>
+          </template>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header">Brain Mode</div>
       <template x-if="hasBrainMode">
@@ -378,7 +380,7 @@
 
 <script>
 function dashboard() {
-  const D_REF = 300;
+  const D_REF = 200;
   let eventId = 0;
 
   return {
@@ -466,7 +468,7 @@ function dashboard() {
       if (typeof msg.heading === 'number') this.headingRaw = msg.heading;
       if (Array.isArray(msg.dist)) {
         for (let i = 0; i < 3; i++) {
-          if (typeof msg.dist[i] === 'number') this.dist[i] = msg.dist[i];
+          if (typeof msg.dist[i] === 'number') this.dist[i] = Math.min(D_REF, msg.dist[i]);
         }
       }
     },
@@ -525,7 +527,7 @@ function dashboard() {
           case '/events': this.handleEvent(msg); break;
           case '/marvin/dist_heading': this.handleDist(msg); break;
           case '/marvin/eyes': this.handleEyes(msg); break;
-          case '/marvin/neck': this.handleNeck(msg); break;
+          case '/marvin/neck_position': this.handleNeck(msg); break;
         }
       });
     },
