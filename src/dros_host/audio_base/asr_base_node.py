@@ -6,6 +6,7 @@ transcriptions to text_stream room using pywhispercpp.
 
 import threading
 
+import soundfile as sf
 import numpy as np
 from dros import Bus, DrosLogger, SourceNode
 
@@ -21,6 +22,7 @@ class ASRBaseNode(EventPublisherMixin, SourceNode):
         bus: Bus,
         topic: str = "/audio_stream",
         output_topic: str = "/text_stream",
+        debug_audio: bool = False,
     ):
         super().__init__(bus=bus)
         self.topic = topic
@@ -37,6 +39,10 @@ class ASRBaseNode(EventPublisherMixin, SourceNode):
         self.buffer_index = 0
         self.buffer_lock = threading.Lock()
         self.buffer_ready_event = threading.Event()
+
+        # Debug audio quality
+        self.audio_count = 0
+        self.debug_audio = debug_audio
 
     def startup(self):
         super().startup()
@@ -66,6 +72,11 @@ class ASRBaseNode(EventPublisherMixin, SourceNode):
                     continue
                 buffer = self.buffer[: self.buffer_index].copy()
             self.reset_buffer()
+            # Write buffer to disk for debugging purposes (optional)
+            if self.debug_audio:
+                debug_filename = f"debug_audio_{self.audio_count}.wav"
+                sf.write(debug_filename, buffer, self.sample_rate)
+                self.audio_count += 1
             text = self.transcribe_buffer(buffer)
             if not text:
                 logger.info("No transcription obtained from the buffer, skipping...")

@@ -63,7 +63,7 @@ def main():
     bus = Bus(transport=ServerTransport(port=5000, static_dir="src/dros_host/static"))
     EventLogNode(bus)
     CameraNode(bus, topic="/marvin/camera")
-    ASRNemotron(bus, topic="/audio_stream", output_topic="/text_stream", model="nvidia/nemotron-speech-streaming-en-0.6b")
+    ASRNemotron(bus, topic="/audio_stream", output_topic="/text_stream", model="nvidia/nemotron-speech-streaming-en-0.6b", debug_audio=False)
     LLMNode(bus, text_topic="/text_stream", response_topic="/llm_response", camera_topic="/marvin/camera", model_name="gemma4:26b")
     TTSNode(bus, input_topic="/llm_response", output_topic="/speech_stream")
     # AudioPlayerNode(bus, topic="/audio_stream", device_index=-1)
